@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace NewMod
+namespace Judgement
 {
     static class LanguageFolderHandler
     {
