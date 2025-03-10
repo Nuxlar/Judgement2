@@ -23,11 +23,13 @@ namespace Judgement
 
       Log.Init(Logger);
 
-      PluginDirectory = Path.GetDirectoryName(Info.Location);
-      LanguageFolderHandler.Register(PluginDirectory);
+     // PluginDirectory = Path.GetDirectoryName(Info.Location);
+     // LanguageFolderHandler.Register(PluginDirectory);
 
       new CreateGameMode();
+      new RunHooks();
       new BazaarHooks();
+      new SimulacrumHooks();
       
       stopwatch.Stop();
       Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");

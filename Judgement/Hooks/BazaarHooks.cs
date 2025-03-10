@@ -107,6 +107,7 @@ namespace Judgement
             placementRule.position = position;
             DirectorSpawnRequest directorSpawnRequest = new DirectorSpawnRequest(spawnCard, placementRule, rng);
             GameObject interactable = instance.TrySpawnObject(directorSpawnRequest);
+            interactable.transform.rotation = Quaternion.identity;
             if (isFree)
             {
                 interactable.GetComponent<PurchaseInteraction>().Networkcost = 0;
@@ -122,10 +123,7 @@ namespace Judgement
                 tier2PickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Tier2);
                 tier3PickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Tier3);
                 yellowPickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Boss);
-                equipPickupIdx = PickupCatalog.equipmentIndexToPickupIndex[0];
-
-                Debug.LogWarning(equipPickupIdx);
-                Debug.LogWarning(EquipmentIndex.None);
+                equipPickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Lunar);
 
                 Run.instance.stageClearCount += 1;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
@@ -142,37 +140,40 @@ namespace Judgement
                     // Disable lunar shop but keep props
                     foreach (Transform child in holder.transform.GetChild(0))
                     {
+                        Debug.LogWarning(child.gameObject.name);
                         if (child.gameObject.name.Contains("Lunar"))
                         {
-                            child.gameObject.SetActive(false);
+                            Debug.LogWarning($"Destroying {child.gameObject.name}");
+                            GameObject.Destroy(child.gameObject);
+                            // child.gameObject.SetActive(false);
                         }
                     }
 
                     // Spawn specific chests based on the wave
                     for (int i = 0; i < Run.instance.participatingPlayerCount; i++)
                     {
-                        SpawnInteractable(chest1, new Vector3(-70.4f, -24.5f, -39.1f), judgementRun.bazaarRng);
-                        SpawnInteractable(chest1, new Vector3(-73.7f, -24.7f, -42.9f), judgementRun.bazaarRng);
-                        SpawnInteractable(chest1, new Vector3(-75.0f, -25.1f, -39.6f), judgementRun.bazaarRng);
+                        SpawnInteractable(chest1, new Vector3(-70.4f, -25.0f, -39.1f), judgementRun.bazaarRng);
+                        SpawnInteractable(chest1, new Vector3(-73.7f, -25.2f, -42.9f), judgementRun.bazaarRng);
+                        SpawnInteractable(chest1, new Vector3(-75.0f, -25.6f, -39.6f), judgementRun.bazaarRng);
 
                         switch (judgementRun.currentWave)
                         {
                             case 0:
                             case 4:
-                                SpawnInteractable(goldChest, new Vector3(-81.4f, -23.7f, -45.5f), judgementRun.bazaarRng);
-                                SpawnInteractable(equipChest, new Vector3(-77.1f, -24.4f, -45.4f), judgementRun.bazaarRng);
+                                SpawnInteractable(goldChest, new Vector3(-81.4f, -24.2f, -45.5f), judgementRun.bazaarRng);
+                                SpawnInteractable(equipChest, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
                                 break;
                             case 6:
-                                SpawnInteractable(chest2, new Vector3(-81.4f, -25.1f, -39.2f), judgementRun.bazaarRng);
-                                SpawnInteractable(yellowChest, new Vector3(-77.1f, -24.4f, -45.4f), judgementRun.bazaarRng);
+                                SpawnInteractable(chest2, new Vector3(-81.4f, -25.3f, -39.2f), judgementRun.bazaarRng);
+                                SpawnInteractable(yellowChest, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
                                 break;
                             case 8:
-                                SpawnInteractable(goldChest, new Vector3(-81.4f, -23.7f, -45.5f), judgementRun.bazaarRng);
-                                SpawnInteractable(chest2, new Vector3(-77.1f, -24.4f, -45.4f), judgementRun.bazaarRng);
+                                SpawnInteractable(goldChest, new Vector3(-81.4f, -24.2f, -45.5f), judgementRun.bazaarRng);
+                                SpawnInteractable(chest2, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
                                 break;
                             default:
-                                SpawnInteractable(chest2, new Vector3(-81.4f, -25.1f, -39.2f), judgementRun.bazaarRng);
-                                SpawnInteractable(chest2, new Vector3(-77.1f, -24.4f, -45.4f), judgementRun.bazaarRng);
+                                SpawnInteractable(chest2, new Vector3(-81.4f, -25.6f, -39.2f), judgementRun.bazaarRng);
+                                SpawnInteractable(chest2, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
                                 break;
                         }
                     }
@@ -242,6 +243,7 @@ namespace Judgement
                 int count = activator.GetComponent<CharacterBody>().inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap);
                 if (count == 0)
                     return;
+                orig(self, activator);
             }
             else
                 orig(self, activator);
