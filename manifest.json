@@ -1,10 +1,10 @@
 ﻿{
 	"name": "Judgement",
-	"version_number": "2.0.0",
+	"version_number": "1.5.0",
 	"website_url": "",
-	"description": "Template",
+	"description": "New GameMode based on Risk of Rain Returns",
 	"dependencies": [
-		"bbepis-BepInExPack-5.4.2117",
-		"RiskofThunder-HookGenPatcher-1.2.4"
+		"RiskofThunder-R2API_Prefab-1.0.4",
+		"RiskofThunder-R2API_ContentManagement-1.0.8"
 	]
 }

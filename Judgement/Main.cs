@@ -10,7 +10,7 @@ namespace Judgement
     public const string PluginGUID = PluginAuthor + "." + PluginName;
     public const string PluginAuthor = "Nuxlar";
     public const string PluginName = "Judgement";
-    public const string PluginVersion = "2.0.0";
+    public const string PluginVersion = "1.5.0";
 
     internal static Main Instance { get; private set; }
     public static string PluginDirectory { get; private set; }
@@ -25,6 +25,8 @@ namespace Judgement
 
       PluginDirectory = Path.GetDirectoryName(Info.Location);
       LanguageFolderHandler.Register(PluginDirectory);
+
+      new CreateGameMode();
 
       stopwatch.Stop();
       Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
