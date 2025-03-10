@@ -8,7 +8,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
-using System.Linq;
 using MonoMod.Cil;
 using Mono.Cecil.Cil;
 
@@ -166,19 +165,6 @@ namespace Judgement
                 gameObject.GetComponent<LanguageTextMeshController>().token = "Judgement";
                 gameObject.GetComponent<HGButton>().hoverToken = "Defeat all that stand before you to reach the final throne.";
             }
-        }
-
-        public class JudgementRun : InfiniteTowerRun
-        {
-            public int currentWave = 0;
-            public int availableHeals = 3;
-            public int purchaseCounter = 0;
-            public bool shouldGoBazaar = true;
-            public bool isFirstStage = true;
-            public Vector3 safeWardPos = Vector3.zero;
-            public Xoroshiro128Plus bazaarRng;
-            public Dictionary<NetworkInstanceId, float> persistentHP = new Dictionary<NetworkInstanceId, float>();
-            public Dictionary<NetworkInstanceId, int> persistentCurse = new Dictionary<NetworkInstanceId, int>();
         }
     }
 }

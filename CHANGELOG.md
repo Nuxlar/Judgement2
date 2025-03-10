@@ -3,6 +3,8 @@
 - Updated for SOTS Phase 2
 - Rewrote the codebase
 - Added multiplayer support
+- Fixed equipment potential not showing
+- Spawns chests instead of using the lunar table
 - Removed heal shrine
 - Removed item restrictions (no more banned healing items)
 

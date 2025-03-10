@@ -27,7 +27,8 @@ namespace Judgement
       LanguageFolderHandler.Register(PluginDirectory);
 
       new CreateGameMode();
-
+      new BazaarHooks();
+      
       stopwatch.Stop();
       Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
     }
