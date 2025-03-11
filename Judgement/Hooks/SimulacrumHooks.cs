@@ -1,5 +1,6 @@
 using RoR2;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace Judgement
@@ -55,12 +56,12 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 DifficultyDef difficultyDef = DifficultyCatalog.GetDifficultyDef(self.selectedDifficulty);
-                float num1 = 1.5f * (float)self.waveIndex;
-                float num2 = 0.0506f * (difficultyDef.scalingValue * 1.75f);
-                float num3 = Mathf.Pow(1.02f, (float)self.waveIndex);
+                float num1 = 1.5f * self.waveIndex;
+                float num2 = 0.0506f * (difficultyDef.scalingValue * 2f);
+                float num3 = Mathf.Pow(1.02f, self.waveIndex);
                 self.difficultyCoefficient = (float)(1.0 + (double)num2 * (double)num1) * num3;
                 self.compensatedDifficultyCoefficient = self.difficultyCoefficient;
-                self.ambientLevel = Mathf.Min((float)(((double)self.difficultyCoefficient - 1.0) / 0.33000001311302185 + 1.0), 9999f);
+                self.ambientLevel = Mathf.Min((float)((self.difficultyCoefficient - 1.0) / 0.33000001311302185 + 1.0), 9999f);
                 int ambientLevelFloor = self.ambientLevelFloor;
                 self.ambientLevelFloor = Mathf.FloorToInt(self.ambientLevel);
                 if (ambientLevelFloor == self.ambientLevelFloor || ambientLevelFloor == 0 || self.ambientLevelFloor <= ambientLevelFloor)
@@ -77,8 +78,11 @@ namespace Judgement
             {
                 if (SceneManager.GetActiveScene().name == "bazaar")
                 {
-                    if (self.fogDamageController)
+                    if (self.fogDamageController && NetworkServer.active)
+                    {
+                        Debug.LogWarning("Destroying Fog Damage");
                         GameObject.Destroy(self.fogDamageController.gameObject);
+                    }
                     return;
                 }
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
@@ -88,8 +92,9 @@ namespace Judgement
                 {
                     GameObject.Destroy(self.fogDamageController.gameObject);
                     GameObject director = GameObject.Find("Director");
-                    if (director)
+                    if (director && NetworkServer.active)
                     {
+                        Debug.LogWarning("Deleting Combat Director");
                         foreach (CombatDirector cd in director.GetComponents<CombatDirector>())
                             GameObject.Destroy(cd);
                     }

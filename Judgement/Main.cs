@@ -23,9 +23,6 @@ namespace Judgement
 
       Log.Init(Logger);
 
-     // PluginDirectory = Path.GetDirectoryName(Info.Location);
-     // LanguageFolderHandler.Register(PluginDirectory);
-
       new CreateGameMode();
       new RunHooks();
       new BazaarHooks();
@@ -33,6 +30,7 @@ namespace Judgement
       
       stopwatch.Stop();
       Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
+      // <PackageReference Include="MMHOOK.RoR2" Version="2025.3.4" />
     }
 
   }

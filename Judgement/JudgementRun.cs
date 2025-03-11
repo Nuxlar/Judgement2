@@ -12,7 +12,9 @@ namespace Judgement
         public bool isFirstStage = true;
         public Vector3 safeWardPos = Vector3.zero;
         public Xoroshiro128Plus bazaarRng;
+        [SyncVar]
         public Dictionary<NetworkInstanceId, float> persistentHP = new Dictionary<NetworkInstanceId, float>();
+        [SyncVar]
         public Dictionary<NetworkInstanceId, int> persistentCurse = new Dictionary<NetworkInstanceId, int>();
     }
 }

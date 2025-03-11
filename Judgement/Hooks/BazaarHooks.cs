@@ -1,4 +1,3 @@
-using R2API;
 using RoR2;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -87,7 +86,6 @@ namespace Judgement
                             pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
                             chest = self,
                             prefabOverride = potentialPickup,
-                            artifactFlag = self.isCommandChest ? GenericPickupController.PickupArtifactFlag.COMMAND : GenericPickupController.PickupArtifactFlag.NONE
                         };
                         PickupDropletController.CreatePickupDroplet(pickupInfo, pickupInfo.position, velocity);
                         velocity = quaternion * velocity;
@@ -101,13 +99,14 @@ namespace Judgement
 
         private void SpawnInteractable(SpawnCard spawnCard, Vector3 position, Xoroshiro128Plus rng, bool isFree = true)
         {
+            Debug.LogWarning($"Spawning {spawnCard.name}");
             DirectorCore instance = DirectorCore.instance;
             DirectorPlacementRule placementRule = new DirectorPlacementRule();
             placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
             placementRule.position = position;
             DirectorSpawnRequest directorSpawnRequest = new DirectorSpawnRequest(spawnCard, placementRule, rng);
             GameObject interactable = instance.TrySpawnObject(directorSpawnRequest);
-            interactable.transform.rotation = Quaternion.identity;
+            // interactable.transform.rotation = Quaternion.identity;
             if (isFree)
             {
                 interactable.GetComponent<PurchaseInteraction>().Networkcost = 0;
@@ -119,6 +118,7 @@ namespace Judgement
             orig(self);
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
+                Debug.LogWarning("Setting up bazaar");
                 tier1PickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Tier1);
                 tier2PickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Tier2);
                 tier3PickupIdx = PickupCatalog.FindPickupIndex(ItemTier.Tier3);
@@ -130,106 +130,115 @@ namespace Judgement
                 GameObject holder = GameObject.Find("HOLDER: Store");
                 if (holder)
                 {
-                    judgementRun.shouldGoBazaar = false;
-                    GameObject portal = GameObject.Instantiate(portalPrefab, new Vector3(-128.6f, -25.4f, -14.4f), Quaternion.Euler(0, 90, 0));
-                    NetworkServer.Spawn(portal);
-
-                    holder.transform.GetChild(1).gameObject.SetActive(false); // disable seers
-                    holder.transform.GetChild(2).gameObject.SetActive(false); // disable cauldrons
-
-                    // Disable lunar shop but keep props
-                    foreach (Transform child in holder.transform.GetChild(0))
+                    if (NetworkServer.active)
                     {
-                        Debug.LogWarning(child.gameObject.name);
-                        if (child.gameObject.name.Contains("Lunar"))
+                        Debug.LogWarning("Setting up judgement bazaar inside networkserver");
+                        judgementRun.shouldGoBazaar = false;
+
+                        holder.transform.GetChild(1).gameObject.SetActive(false); // disable seers
+                        holder.transform.GetChild(2).gameObject.SetActive(false); // disable cauldrons
+
+                        // Disable lunar shop but keep props
+                        foreach (Transform child in holder.transform.GetChild(0))
                         {
-                            Debug.LogWarning($"Destroying {child.gameObject.name}");
-                            GameObject.Destroy(child.gameObject);
-                            // child.gameObject.SetActive(false);
+                            if (child.gameObject.name.Contains("Lunar"))
+                            {
+                                GameObject.Destroy(child.gameObject);
+                            }
                         }
-                    }
 
-                    // Spawn specific chests based on the wave
-                    for (int i = 0; i < Run.instance.participatingPlayerCount; i++)
-                    {
-                        SpawnInteractable(chest1, new Vector3(-70.4f, -25.0f, -39.1f), judgementRun.bazaarRng);
-                        SpawnInteractable(chest1, new Vector3(-73.7f, -25.2f, -42.9f), judgementRun.bazaarRng);
-                        SpawnInteractable(chest1, new Vector3(-75.0f, -25.6f, -39.6f), judgementRun.bazaarRng);
-
-                        switch (judgementRun.currentWave)
+                        // Prevent Newt kick out and close the bazaar
+                        GameObject kickout = SceneInfo.instance.transform.Find("KickOutOfShop").gameObject;
+                        if ((bool)kickout)
                         {
-                            case 0:
-                            case 4:
-                                SpawnInteractable(goldChest, new Vector3(-81.4f, -24.2f, -45.5f), judgementRun.bazaarRng);
-                                SpawnInteractable(equipChest, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
-                                break;
-                            case 6:
-                                SpawnInteractable(chest2, new Vector3(-81.4f, -25.3f, -39.2f), judgementRun.bazaarRng);
-                                SpawnInteractable(yellowChest, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
-                                break;
-                            case 8:
-                                SpawnInteractable(goldChest, new Vector3(-81.4f, -24.2f, -45.5f), judgementRun.bazaarRng);
-                                SpawnInteractable(chest2, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
-                                break;
-                            default:
-                                SpawnInteractable(chest2, new Vector3(-81.4f, -25.6f, -39.2f), judgementRun.bazaarRng);
-                                SpawnInteractable(chest2, new Vector3(-77.1f, -24.9f, -45.4f), judgementRun.bazaarRng);
-                                break;
+                            kickout.gameObject.SetActive(true);
+                            kickout.transform.GetChild(8).gameObject.SetActive(false);
                         }
-                    }
 
-                    // Prevent Newt kick out and close the bazaar
-                    GameObject kickout = SceneInfo.instance.transform.Find("KickOutOfShop").gameObject;
-                    if ((bool)kickout)
-                    {
-                        kickout.gameObject.SetActive(true);
-                        kickout.transform.GetChild(8).gameObject.SetActive(false);
-                    }
+                        GameObject portal = GameObject.Instantiate(portalPrefab, new Vector3(-128.6f, -25.4f, -14.4f), Quaternion.Euler(0, 90, 0));
+                        NetworkServer.Spawn(portal);
 
-                    // Spawn Void Cradles on specific waves
-                    if (judgementRun.currentWave == 4 || judgementRun.currentWave == 8)
-                    {
+
+                        // Spawn specific chests based on the wave
                         for (int i = 0; i < Run.instance.participatingPlayerCount; i++)
                         {
-                            SpawnInteractable(voidChest, new Vector3(-90f, -25f, -11.5f), judgementRun.bazaarRng, false);
-                        }
-                    }   
+                            SpawnInteractable(chest1, new Vector3(-70.4f, -25.2f, -39.1f), judgementRun.bazaarRng);
+                            SpawnInteractable(chest1, new Vector3(-73.7f, -25.4f, -42.9f), judgementRun.bazaarRng);
+                            SpawnInteractable(chest1, new Vector3(-75.0f, -25.8f, -39.6f), judgementRun.bazaarRng);
 
-                    // Spawn a Green Printer if someone has Regen Scrap
-                    foreach (CharacterMaster readOnlyInstances in CharacterMaster.readOnlyInstancesList)
-                    {
-                        if (readOnlyInstances.inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap) > 0)
+                            switch (judgementRun.currentWave)
+                            {
+                                case 0:
+                                case 4:
+                                    SpawnInteractable(goldChest, new Vector3(-81.4f, -24.2f, -45.5f), judgementRun.bazaarRng);
+                                    SpawnInteractable(equipChest, new Vector3(-77.1f, -25.1f, -45.4f), judgementRun.bazaarRng);
+                                    break;
+                                case 6:
+                                    SpawnInteractable(chest2, new Vector3(-81.4f, -25.5f, -39.2f), judgementRun.bazaarRng);
+                                    SpawnInteractable(yellowChest, new Vector3(-77.1f, -25.1f, -45.4f), judgementRun.bazaarRng);
+                                    break;
+                                case 8:
+                                    SpawnInteractable(goldChest, new Vector3(-81.4f, -24.2f, -45.5f), judgementRun.bazaarRng);
+                                    SpawnInteractable(chest2, new Vector3(-77.1f, -25.1f, -45.4f), judgementRun.bazaarRng);
+                                    break;
+                                default:
+                                    SpawnInteractable(chest2, new Vector3(-81.4f, -25.8f, -39.2f), judgementRun.bazaarRng);
+                                    SpawnInteractable(chest2, new Vector3(-77.1f, -25.1f, -45.4f), judgementRun.bazaarRng);
+                                    break;
+                            }
+                        }
+
+                        // Spawn Void Cradles on specific waves
+                        if (judgementRun.currentWave == 4 || judgementRun.currentWave == 8)
                         {
-                            SpawnInteractable(greenPrinter, new Vector3(-108.7849f, -27f, -46.7452f), judgementRun.bazaarRng, false);
-                            break;
+                            for (int i = 0; i < Run.instance.participatingPlayerCount; i++)
+                            {
+                                SpawnInteractable(voidChest, new Vector3(-90f, -25f, -11.5f), judgementRun.bazaarRng, false);
+                            }
                         }
-                    }
 
-                    // Spawn Lockboxes based on players with Rusted Keys (limited to 1 per player)
-                    Vector3[] lockboxPositions = new Vector3[] { new Vector3(-103.7627f, -24.5f, -4.7243f), new Vector3(-101.7627f, -24.5f, -4.7243f), new Vector3(-105.7627f, -24.5f, -4.7243f), new Vector3(-107.7627f, -24.5f, -4.7243f) };
-                    for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
-                    {
-                        CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
-                        if (master.inventory.GetItemCount(RoR2Content.Items.TreasureCache) > 0)
-                            SpawnInteractable(lockBox, lockboxPositions[i], judgementRun.bazaarRng, false);
-                    }
+                        // Spawn a Green Printer if someone has Regen Scrap
+                        foreach (CharacterMaster readOnlyInstances in CharacterMaster.readOnlyInstancesList)
+                        {
+                            if (readOnlyInstances.inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap) > 0)
+                            {
+                                SpawnInteractable(greenPrinter, new Vector3(-108.7849f, -27f, -46.7452f), judgementRun.bazaarRng, false);
+                                break;
+                            }
+                        }
 
-                     // Spawn Void Lockboxes based on players with Encrusted Keys (limited to 1 per player)
-                    Vector3[] lockboxVoidPositions = new Vector3[] { new Vector3(-89.5709f, -23.5f, -6.589f), new Vector3(-87.5709f, -23.5f, -6f), new Vector3(-85.5709f, -23.5f, -5.589f), new Vector3(-83.5709f, -23.5f, -5f) };
-                    for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
-                    {
-                        CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
-                        if (master.inventory.GetItemCount(DLC1Content.Items.TreasureCacheVoid) > 0)
-                            SpawnInteractable(lockBoxVoid, lockboxVoidPositions[i], judgementRun.bazaarRng, false);
-                    }
+                        // Spawn Lockboxes based on players with Rusted Keys (limited to 1 per player)
+                        Vector3[] lockboxPositions = new Vector3[] { new Vector3(-103.7627f, -24.5f, -4.7243f), new Vector3(-101.7627f, -24.5f, -4.7243f), new Vector3(-105.7627f, -24.5f, -4.7243f), new Vector3(-107.7627f, -24.5f, -4.7243f) };
+                        for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
+                        {
+                            CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
+                            if (master.inventory.GetItemCount(RoR2Content.Items.TreasureCache) > 0)
+                            {
+                                SpawnInteractable(lockBox, lockboxPositions[i], judgementRun.bazaarRng, false);
+                            }
+                        }
 
-                    // Spawn Free Chests based on players with Shipping Request Form (limited to 1 per player)
-                    Vector3[] freeChestPositions = new Vector3[] { new Vector3(-122.9354f, -26f, -29.2073f), new Vector3(-123.8197f, -25.1055f, -22.2822f), new Vector3(-117.0709f, -24.2098f, -32.8076f), new Vector3(-110.2542f, -24.979f, -37.4319f) };
-                          for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
-                    {
-                        CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
-                        if (master.inventory.GetItemCount(DLC1Content.Items.FreeChest) > 0)
-                            SpawnInteractable(freeChest, freeChestPositions[i], judgementRun.bazaarRng, false);
+                        // Spawn Void Lockboxes based on players with Encrusted Keys (limited to 1 per player)
+                        Vector3[] lockboxVoidPositions = new Vector3[] { new Vector3(-89.5709f, -23.5f, -6.589f), new Vector3(-87.5709f, -23.5f, -6f), new Vector3(-85.5709f, -23.5f, -5.589f), new Vector3(-83.5709f, -23.5f, -5f) };
+                        for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
+                        {
+                            CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
+                            if (master.inventory.GetItemCount(DLC1Content.Items.TreasureCacheVoid) > 0)
+                            {
+                                SpawnInteractable(lockBoxVoid, lockboxVoidPositions[i], judgementRun.bazaarRng, false);
+                            }
+                        }
+
+                        // Spawn Free Chests based on players with Shipping Request Form (limited to 1 per player)
+                        Vector3[] freeChestPositions = new Vector3[] { new Vector3(-122.9354f, -26f, -29.2073f), new Vector3(-123.8197f, -25.1055f, -22.2822f), new Vector3(-117.0709f, -24.2098f, -32.8076f), new Vector3(-110.2542f, -24.979f, -37.4319f) };
+                        for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
+                        {
+                            CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
+                            if (master.inventory.GetItemCount(DLC1Content.Items.FreeChest) > 0)
+                            {
+                                SpawnInteractable(freeChest, freeChestPositions[i], judgementRun.bazaarRng, false);
+                            }
+                        }
                     }
                 }
             }
@@ -238,12 +247,25 @@ namespace Judgement
         private void PreventPrinterCheese(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
         {
             JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-            if (judgementRun && self.name == "DuplicatorLarge(Clone)")
+            if (judgementRun)
             {
-                int count = activator.GetComponent<CharacterBody>().inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap);
-                if (count == 0)
-                    return;
-                orig(self, activator);
+                if (self.name == "VoidChest(Clone)")
+                {
+                    CharacterBody body = activator.GetComponent<CharacterBody>();
+                    if (judgementRun.persistentCurse.TryGetValue(body.master.netId, out int _))
+                        judgementRun.persistentCurse[body.master.netId] += 20;
+                    else
+                        judgementRun.persistentCurse.Add(body.master.netId, 20);
+                    for (int i = 0; i < 20; i++)
+                        body.AddBuff(RoR2Content.Buffs.PermanentCurse);
+                }
+                if (self.name == "DuplicatorLarge(Clone)")
+                {
+                    int count = activator.GetComponent<CharacterBody>().inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap);
+                    if (count == 0)
+                        return;
+                    orig(self, activator);
+                }
             }
             else
                 orig(self, activator);

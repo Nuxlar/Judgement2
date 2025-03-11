@@ -4,20 +4,14 @@ using System.Collections.ObjectModel;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
-using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.SceneManagement;
 using EntityStates.Missions.BrotherEncounter;
 using MonoMod.Cil;
-using System.Collections;
 
 namespace Judgement
 {
     public class RunHooks
     {
-       // private PostProcessProfile ppProfile = Addressables.LoadAssetAsync<PostProcessProfile>("RoR2/Base/title/PostProcessing/ppSceneEclipseStandard.asset").WaitForCompletion();
-        private Material spaceStarsMat = Addressables.LoadAssetAsync<Material>("RoR2/Base/eclipseworld/matEclipseStarsSpheres.mat").WaitForCompletion();
-        private Material altSkyboxMat = Addressables.LoadAssetAsync<Material>("RoR2/Base/artifactworld/matAWSkySphere.mat").WaitForCompletion();
-
         private SceneDef voidPlains = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itgolemplains/itgolemplains.asset").WaitForCompletion();
         private SceneDef voidAqueduct = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itgoolake/itgoolake.asset").WaitForCompletion();
         private SceneDef voidAphelian = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itancientloft/itancientloft.asset").WaitForCompletion();
@@ -57,9 +51,23 @@ namespace Judgement
 
         public void LoadPersistentHP(CharacterBody body)
         {
+            Debug.LogWarning("Loading HP");
             JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
             if (body.master && body.healthComponent && judgementRun.persistentHP.TryGetValue(body.master.netId, out float hp))
                 body.healthComponent.health = hp;
+            Debug.LogWarning("Done Loading HP");
+        }
+
+        public void LoadPersistentCurse(CharacterBody body)
+        {
+            Debug.LogWarning("Loading Curse");
+            JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+            if (body.master && judgementRun.persistentCurse.TryGetValue(body.master.netId, out int curseStacks))
+            {
+                for (int i = 0; i < curseStacks; i++)
+                    body.AddBuff(RoR2Content.Buffs.PermanentCurse);
+            }
+            Debug.LogWarning("Done Loading Curse");
         }
 
         private void RemoveExtraLoot(ILContext il)
@@ -112,6 +120,7 @@ namespace Judgement
         private void SeedRun(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
+            Debug.LogWarning(self.name);
             if (self.name.Contains("Judgement"))
             {
                 JudgementRun judgementRun = self.gameObject.GetComponent<JudgementRun>();
@@ -123,11 +132,13 @@ namespace Judgement
         {
             if (Run.instance && Run.instance.name.Contains("Judgement") && self.teamIndex == TeamIndex.Player)
             {
+                Debug.LogWarning("Spawning Body");
                 string sceneName = SceneManager.GetActiveScene().name;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-
-                if (sceneName == "bazaar" && (judgementRun.isFirstStage || judgementRun.persistentHP.TryGetValue(self.netId, out float _)))
-                    return orig(self, new Vector3(-81.5f, -24.8f, -16.6f), Quaternion.Euler(358, 210, 0));
+                Debug.LogWarning($"Position {position}");
+                // new Vector3(-81.5f, -24.8f, -16.6f)
+                if (sceneName == "bazaar")
+                    return orig(self, position, Quaternion.Euler(358, 210, 0));
                 else if (sceneName == "moon2" && judgementRun.persistentHP.TryGetValue(self.netId, out float _) && !self.IsExtraLifePendingServer())
                     return orig(self, new Vector3(127, 500, 101), Quaternion.Euler(358, 210, 0));
                 else
@@ -151,8 +162,12 @@ namespace Judgement
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
                 if (judgementRun.isFirstStage)
                 {
+                    Debug.LogWarning("Setting initial scene to bazaar");
                     SceneDef sceneDef = SceneCatalog.FindSceneDef("bazaar");
-                    self.nextStageScene = sceneDef;
+                    // self.nextStageScene = sceneDef;
+                    WeightedSelection<SceneDef> singularChoice = new WeightedSelection<SceneDef>();
+                    singularChoice.AddChoice(sceneDef, 1f);
+                    orig(self, singularChoice);
                 }
             }
             else
@@ -163,6 +178,7 @@ namespace Judgement
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
+                Debug.LogWarning("Managing stage selection");
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
                 SavePersistentHP();
                 if (judgementRun.currentWave == 0)
@@ -219,11 +235,20 @@ namespace Judgement
             orig(self);
             if (Run.instance && Run.instance.name.Contains("Judgement") && self.isPlayerControlled && !self.HasBuff(RoR2Content.Buffs.Immune))
             {
-                LoadPersistentHP(self);
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+                if (!judgementRun.isFirstStage)
+                {
+                    Debug.LogWarning("Loading Persistent Stuff");
+                    LoadPersistentHP(self);
+                    LoadPersistentCurse(self);
+                }
+
                 if (Run.instance.selectedDifficulty >= DifficultyIndex.Eclipse1 && judgementRun.currentWave == 0)
                     self.healthComponent.health = self.healthComponent.fullHealth;
+
                 self.baseDamage *= 1.25f;
+                self.baseRegen = 0f;
+                self.levelRegen = 0f;
             }
         }
 
