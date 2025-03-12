@@ -22,6 +22,7 @@ R2Modman instructions:
 - Click on `Debugging`
 - Click `Copy LogOutput.log to clipboard`
 - Paste here
+
 Gale instructions:
 - Click on `Profile` at the top of the screen
 - Click `Copy Debug Info`
