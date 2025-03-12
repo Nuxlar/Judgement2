@@ -1,8 +1,8 @@
 ﻿{
 	"name": "Judgement",
 	"version_number": "1.5.0",
-	"website_url": "",
-	"description": "New GameMode based on Risk of Rain Returns",
+	"website_url": "https://github.com/Nuxlar/Judgement2/issues",
+	"description": "New GameMode based on Risk of Rain Returns. Now with multiplayer support!",
 	"dependencies": [
 		"RiskofThunder-R2API_Prefab-1.0.4",
 		"RiskofThunder-R2API_ContentManagement-1.0.8"
