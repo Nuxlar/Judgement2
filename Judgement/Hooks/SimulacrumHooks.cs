@@ -1,15 +1,22 @@
+using System;
 using RoR2;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 namespace Judgement
 {
     public class SimulacrumHooks
     {
+        private SpawnCard lockBox = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Junk/TreasureCache/iscLockbox.asset").WaitForCompletion();
+        private SpawnCard lockBoxVoid = Addressables.LoadAssetAsync<SpawnCard>("RoR2/DLC1/TreasureCacheVoid/iscLockboxVoid.asset").WaitForCompletion();
+        private SpawnCard freeChest = Addressables.LoadAssetAsync<SpawnCard>("RoR2/DLC1/FreeChest/iscFreeChest.asset").WaitForCompletion();
+        private SpawnCard greenPrinter = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/DuplicatorLarge/iscDuplicatorLarge.asset").WaitForCompletion();
+        private SpawnCard voidChest = Addressables.LoadAssetAsync<SpawnCard>("RoR2/DLC1/VoidChest/iscVoidChest.asset").WaitForCompletion();
+
         public SimulacrumHooks()
         {
-            On.RoR2.InfiniteTowerRun.SpawnSafeWard += ManageWaves;
+            On.RoR2.InfiniteTowerRun.SpawnSafeWard += SetupInteractables;
             On.RoR2.InfiniteTowerRun.MoveSafeWard += PreventCrabMovement;
             On.RoR2.InfiniteTowerRun.RecalculateDifficultyCoefficentInternal += IncreaseScaling;
             On.RoR2.InfiniteTowerWaveController.DropRewards += PreventCrabDrops;
@@ -72,37 +79,120 @@ namespace Judgement
                 orig(self);
         }
 
-        private void ManageWaves(On.RoR2.InfiniteTowerRun.orig_SpawnSafeWard orig, InfiniteTowerRun self, InteractableSpawnCard spawnCard, DirectorPlacementRule placementRule)
+        private void SetupInteractables(On.RoR2.InfiniteTowerRun.orig_SpawnSafeWard orig, InfiniteTowerRun self, InteractableSpawnCard spawnCard, DirectorPlacementRule placementRule)
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
-                if (SceneManager.GetActiveScene().name == "bazaar")
-                {
-                    if (self.fogDamageController && NetworkServer.active)
-                    {
-                        Debug.LogWarning("Destroying Fog Damage");
-                        GameObject.Destroy(self.fogDamageController.gameObject);
-                    }
-                    return;
-                }
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                judgementRun.shouldGoBazaar = true;
-                judgementRun.isFirstStage = false;
-                if (judgementRun.currentWave == 10)
+                if (judgementRun.waveIndex == 10)
                 {
-                    GameObject.Destroy(self.fogDamageController.gameObject);
                     GameObject director = GameObject.Find("Director");
                     if (director && NetworkServer.active)
                     {
-                        Debug.LogWarning("Deleting Combat Director");
+                        GameObject.Destroy(self.fogDamageController.gameObject);
                         foreach (CombatDirector cd in director.GetComponents<CombatDirector>())
                             GameObject.Destroy(cd);
                     }
                     return;
                 }
-                judgementRun.currentWave += 2;
+
+                GameObject gameObject = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest((SpawnCard)spawnCard, placementRule, self.safeWardRng));
+                if ((bool)gameObject)
+                {
+                    NetworkServer.Spawn(gameObject);
+                    self.safeWardController = gameObject.GetComponent<InfiniteTowerSafeWardController>();
+                    if ((bool)self.safeWardController)
+                        self.safeWardController.onActivated += new Action<InfiniteTowerSafeWardController>(self.OnSafeWardActivated);
+                    HoldoutZoneController component = gameObject.GetComponent<HoldoutZoneController>();
+                    if ((bool)component)
+                        component.calcAccumulatedCharge += new HoldoutZoneController.CalcAccumulatedChargeDelegate(self.CalcHoldoutZoneCharge);
+                    if (!(bool)self.fogDamageController)
+                        return;
+                    self.fogDamageController.AddSafeZone(self.safeWardController.safeZone);
+
+                    if (NetworkServer.active)
+                    {
+                        Vector3 position = self.safeWardController.transform.position;
+
+                        if (judgementRun.waveIndex == 4 || judgementRun.waveIndex == 8)
+                        {
+                            for (int i = 0; i < Run.instance.participatingPlayerCount; i++)
+                            {
+                                SpawnInteractable(voidChest, position, false);
+                            }
+                        }
+
+                        foreach (CharacterMaster readOnlyInstances in CharacterMaster.readOnlyInstancesList)
+                        {
+                            if (readOnlyInstances.inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap) > 0)
+                            {
+                                SpawnInteractable(greenPrinter, position, false);
+                                break;
+                            }
+                        }
+
+                        for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
+                        {
+                            CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
+                            if (master.inventory.GetItemCount(RoR2Content.Items.TreasureCache) > 0)
+                            {
+                                SpawnInteractable(lockBox, position, false);
+                            }
+                        }
+
+                        for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
+                        {
+                            CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
+                            if (master.inventory.GetItemCount(DLC1Content.Items.TreasureCacheVoid) > 0)
+                            {
+                                SpawnInteractable(lockBoxVoid, position, false);
+                            }
+                        }
+
+                        for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
+                        {
+                            CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
+                            if (master.inventory.GetItemCount(DLC1Content.Items.FreeChest) > 0)
+                            {
+                                SpawnInteractable(freeChest, position, false);
+                            }
+                        }
+                    }
+                }
             }
-            orig(self, spawnCard, placementRule);
+            else orig(self, spawnCard, placementRule);
+        }
+
+        private void SpawnInteractable(SpawnCard spawnCard, Vector3 position, bool isFree = true)
+        {
+            DirectorCore instance = DirectorCore.instance;
+            DirectorPlacementRule placementRule = new DirectorPlacementRule();
+            placementRule.placementMode = DirectorPlacementRule.PlacementMode.Approximate;
+            placementRule.position = position;
+            placementRule.minDistance = 2;
+            placementRule.maxDistance = 20;
+            DirectorSpawnRequest directorSpawnRequest = new DirectorSpawnRequest(spawnCard, placementRule, Run.instance.runRNG);
+            GameObject interactable = instance.TrySpawnObject(directorSpawnRequest);
+
+            if (!interactable)
+            {
+                Log.Error($"Judgement: Failed to spawn pre-wave interactable {spawnCard.name}.");
+            }
+
+            if (isFree)
+                SetPurchaseCostFree(interactable);
+        }
+
+        private void SetPurchaseCostFree(GameObject chest)
+        {
+            PurchaseInteraction purchaseInteraction = chest.GetComponent<PurchaseInteraction>();
+            if (purchaseInteraction)
+            {
+                purchaseInteraction.cost = 0;
+                purchaseInteraction.Networkcost = 0;
+            }
+            else
+                Log.Error($"Judgement: Failed to set {chest.name} cost to free.");
         }
     }
 }

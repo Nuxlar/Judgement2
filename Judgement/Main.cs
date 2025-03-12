@@ -1,6 +1,8 @@
 using BepInEx;
+using RoR2;
 using System.Diagnostics;
 using System.IO;
+using UnityEngine;
 
 namespace Judgement
 {
@@ -18,19 +20,18 @@ namespace Judgement
     public void Awake()
     {
       Instance = this;
-      
+
       Stopwatch stopwatch = Stopwatch.StartNew();
 
       Log.Init(Logger);
 
       new CreateGameMode();
       new RunHooks();
-      new BazaarHooks();
       new SimulacrumHooks();
-      
+      new EntityStateHooks();
+
       stopwatch.Stop();
-      Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
-      // <PackageReference Include="MMHOOK.RoR2" Version="2025.3.4" />
+      Log.Info_NoCallerPrefix($"Judgement: Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
     }
 
   }

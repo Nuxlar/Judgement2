@@ -12,6 +12,15 @@ namespace Judgement
 {
     public class RunHooks
     {
+
+        private BasicPickupDropTable dtEquip = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtEquipment.asset").WaitForCompletion();
+        private BasicPickupDropTable dtWhite = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtTier1Item.asset").WaitForCompletion();
+        private BasicPickupDropTable dtGreen = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtTier2Item.asset").WaitForCompletion();
+        private BasicPickupDropTable dtRed = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtTier3Item.asset").WaitForCompletion();
+        private BasicPickupDropTable dtYellow = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/DuplicatorWild/dtDuplicatorWild.asset").WaitForCompletion();
+
+        private GameObject potentialPickup = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/OptionPickup/OptionPickup.prefab").WaitForCompletion();
+
         private SceneDef voidPlains = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itgolemplains/itgolemplains.asset").WaitForCompletion();
         private SceneDef voidAqueduct = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itgoolake/itgoolake.asset").WaitForCompletion();
         private SceneDef voidAphelian = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itancientloft/itancientloft.asset").WaitForCompletion();
@@ -26,15 +35,60 @@ namespace Judgement
         public RunHooks()
         {
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
-            On.RoR2.Run.PickNextStageScene += SetInitialStageBazaar;
+            On.RoR2.PurchaseInteraction.OnInteractionBegin += PreventPrinterCheese;
+            On.RoR2.Run.PickNextStageScene += SetFirstStage;
             On.RoR2.Run.Start += SeedRun;
-            On.RoR2.CharacterMaster.SpawnBody += MoveSurvivorOnSpawn;
+            On.RoR2.CharacterMaster.SpawnBody += CreateDropletsOnSpawn;
             On.RoR2.MusicController.PickCurrentTrack += SetJudgementMusic;
             On.EntityStates.Missions.BrotherEncounter.BossDeath.OnEnter += EndRun;
             On.RoR2.CharacterBody.Start += ManageSurvivorStats;
             On.RoR2.SceneExitController.Begin += ManageStageSelection;
         }
 
+        private void PreventPrinterCheese(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
+        {
+            JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+            if (judgementRun)
+            {
+                if (self.name == "VoidChest(Clone)")
+                {
+                    CharacterBody body = activator.GetComponent<CharacterBody>();
+                    if (judgementRun.persistentCurse.TryGetValue(body.master.netId, out int _))
+                        judgementRun.persistentCurse[body.master.netId] += 20;
+                    else
+                        judgementRun.persistentCurse.Add(body.master.netId, 20);
+                    for (int i = 0; i < 20; i++)
+                        body.AddBuff(RoR2Content.Buffs.PermanentCurse);
+                    orig(self, activator);
+                }
+                else if (self.name == "DuplicatorLarge(Clone)")
+                {
+                    int count = activator.GetComponent<CharacterBody>().inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap);
+                    if (count == 0)
+                        return;
+                    orig(self, activator);
+                }
+                else
+                    orig(self, activator);
+            }
+            else
+                orig(self, activator);
+        }
+
+        private void SetFirstStage(On.RoR2.Run.orig_PickNextStageScene orig, Run self, WeightedSelection<SceneDef> choices)
+        {
+            if (Run.instance.stageClearCount == 0 && self.name.Contains("Judgement"))
+            {
+                JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+                if (judgementRun.waveIndex == 0)
+                {
+                    SceneDef sceneDef = SceneCatalog.FindSceneDef("itgolemplains");
+                    self.nextStageScene = sceneDef;
+                }
+            }
+            else
+                orig(self, choices);
+        }
 
         public void SavePersistentHP()
         {
@@ -51,23 +105,19 @@ namespace Judgement
 
         public void LoadPersistentHP(CharacterBody body)
         {
-            Debug.LogWarning("Loading HP");
             JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
             if (body.master && body.healthComponent && judgementRun.persistentHP.TryGetValue(body.master.netId, out float hp))
                 body.healthComponent.health = hp;
-            Debug.LogWarning("Done Loading HP");
         }
 
         public void LoadPersistentCurse(CharacterBody body)
         {
-            Debug.LogWarning("Loading Curse");
             JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
             if (body.master && judgementRun.persistentCurse.TryGetValue(body.master.netId, out int curseStacks))
             {
                 for (int i = 0; i < curseStacks; i++)
                     body.AddBuff(RoR2Content.Buffs.PermanentCurse);
             }
-            Debug.LogWarning("Done Loading Curse");
         }
 
         private void RemoveExtraLoot(ILContext il)
@@ -76,7 +126,7 @@ namespace Judgement
 
             static int ItemFunction(int itemCount)
             {
-                if (Run.instance && Run.instance.name.Contains("Judgement") && SceneManager.GetActiveScene().name != "bazaar")
+                if (Run.instance && Run.instance.name.Contains("Judgement"))
                     return 0;
                 return itemCount;
             }
@@ -87,7 +137,7 @@ namespace Judgement
                 ilCursor.EmitDelegate<Func<int, int>>((count) => ItemFunction(count));
             }
             else
-                Debug.LogWarning("Judgement: TreasureCache IL hook failed");
+                Log.Error("Judgement: TreasureCache IL hook failed");
 
             ilCursor.Index = 0;
 
@@ -97,7 +147,7 @@ namespace Judgement
                 ilCursor.EmitDelegate<Func<int, int>>((count) => ItemFunction(count));
             }
             else
-                Debug.LogWarning("Judgement: TreasureCacheVoid IL hook failed");
+                Log.Error("Judgement: TreasureCacheVoid IL hook failed");
 
             ilCursor.Index = 0;
 
@@ -107,45 +157,77 @@ namespace Judgement
                 ilCursor.EmitDelegate<Func<int, int>>((count) => ItemFunction(count));
             }
             else
-                Debug.LogWarning("Judgement: FreeChest IL hook failed");
+                Log.Error("Judgement: FreeChest IL hook failed");
         }
-
-
-        // bazaar spawnpos -81.5 -24.8 -16.6
-        // portal spawnpos -128.6 -25.4 -14.4
-        // key/shorm1 -112.0027 -23.7788 -4.5843
-        // key/shorm2 -103.7627 -23.8988 -4.7243
-        // vradle -90.5743 -24.3739 -11.5119
 
         private void SeedRun(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
-            Debug.LogWarning(self.name);
-            if (self.name.Contains("Judgement"))
+            if (self.name.Contains("Judgement") && NetworkServer.active)
             {
                 JudgementRun judgementRun = self.gameObject.GetComponent<JudgementRun>();
-                judgementRun.bazaarRng = new Xoroshiro128Plus(self.seed ^ 1635UL);
+                Run.instance.runRNG = new Xoroshiro128Plus(self.seed ^ 1635UL);
             }
         }
 
-        private CharacterBody MoveSurvivorOnSpawn(On.RoR2.CharacterMaster.orig_SpawnBody orig, CharacterMaster self, Vector3 position, Quaternion rotation)
+        private CharacterBody CreateDropletsOnSpawn(On.RoR2.CharacterMaster.orig_SpawnBody orig, CharacterMaster self, Vector3 position, Quaternion rotation)
         {
-            if (Run.instance && Run.instance.name.Contains("Judgement") && self.teamIndex == TeamIndex.Player)
+            PlayerCharacterMasterController pcmc = self.GetComponent<PlayerCharacterMasterController>();
+            if (Run.instance && Run.instance.name.Contains("Judgement") && pcmc && NetworkServer.active)
             {
-                Debug.LogWarning("Spawning Body");
                 string sceneName = SceneManager.GetActiveScene().name;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                Debug.LogWarning($"Position {position}");
-                // new Vector3(-81.5f, -24.8f, -16.6f)
-                if (sceneName == "bazaar")
-                    return orig(self, position, Quaternion.Euler(358, 210, 0));
-                else if (sceneName == "moon2" && judgementRun.persistentHP.TryGetValue(self.netId, out float _) && !self.IsExtraLifePendingServer())
+
+                if (sceneName == "moon2" && pcmc)
                     return orig(self, new Vector3(127, 500, 101), Quaternion.Euler(358, 210, 0));
-                else
-                    return orig(self, position, rotation);
+
+                if (sceneName != "moon2" && !self.IsExtraLifePendingServer())
+                {
+                    double angle = 360.0 / 5;
+                    Vector3 velocity = Vector3.up * 10 + Vector3.forward * 2;
+                    Vector3 up = Vector3.up;
+                    Quaternion quaternion = Quaternion.AngleAxis((float)angle, up);
+
+                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+
+                    switch (judgementRun.waveIndex)
+                    {
+                        case 0:
+                        case 4:
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
+                            break;
+                        case 6:
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Boss), dtYellow, Run.instance.runRNG);
+                            break;
+                        case 8:
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                            break;
+                        default:
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                            break;
+                    }
+
+                    void CreateDrop(PickupIndex pickupIndex, BasicPickupDropTable dropTable, Xoroshiro128Plus rng)
+                    {
+                        GenericPickupController.CreatePickupInfo pickupInfo = new GenericPickupController.CreatePickupInfo()
+                        {
+                            pickupIndex = pickupIndex,
+                            position = position + Vector3.up * 1.5f,
+                            pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
+                            prefabOverride = potentialPickup,
+                        };
+                        PickupDropletController.CreatePickupDroplet(pickupInfo, pickupInfo.position, velocity);
+                        velocity = quaternion * velocity;
+                    }
+                }
             }
-            else
-                return orig(self, position, rotation);
+            return orig(self, position, rotation);
         }
 
         private static void SetJudgementMusic(On.RoR2.MusicController.orig_PickCurrentTrack orig, MusicController self, ref MusicTrackDef newTrack)
@@ -155,35 +237,18 @@ namespace Judgement
                 newTrack = MusicTrackCatalog.FindMusicTrackDef("muSong23");
         }
 
-        private void SetInitialStageBazaar(On.RoR2.Run.orig_PickNextStageScene orig, Run self, WeightedSelection<SceneDef> choices)
-        {
-            if (Run.instance.stageClearCount == 0 && self.name.Contains("Judgement"))
-            {
-                JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                if (judgementRun.isFirstStage)
-                {
-                    Debug.LogWarning("Setting initial scene to bazaar");
-                    SceneDef sceneDef = SceneCatalog.FindSceneDef("bazaar");
-                    // self.nextStageScene = sceneDef;
-                    WeightedSelection<SceneDef> singularChoice = new WeightedSelection<SceneDef>();
-                    singularChoice.AddChoice(sceneDef, 1f);
-                    orig(self, singularChoice);
-                }
-            }
-            else
-                orig(self, choices);
-        }
-
         private void ManageStageSelection(On.RoR2.SceneExitController.orig_Begin orig, SceneExitController self)
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
-                Debug.LogWarning("Managing stage selection");
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                SavePersistentHP();
-                if (judgementRun.currentWave == 0)
+
+                if (NetworkServer.active)
+                    SavePersistentHP();
+
+                if (judgementRun.waveIndex == 0)
                     Run.instance.nextStageScene = voidPlains;
-                if (judgementRun.currentWave == 2)
+                if (judgementRun.waveIndex == 2)
                 {
                     int[] array = Array.Empty<int>();
                     WeightedSelection<SceneDef> weightedSelection = new WeightedSelection<SceneDef>();
@@ -193,20 +258,15 @@ namespace Judgement
                     WeightedSelection<SceneDef>.ChoiceInfo choice = weightedSelection.GetChoice(toChoiceIndex);
                     Run.instance.nextStageScene = choice.value;
                 }
-                if (judgementRun.currentWave == 4)
+                if (judgementRun.waveIndex == 4)
                     Run.instance.nextStageScene = voidRPD;
-                if (judgementRun.currentWave == 6)
+                if (judgementRun.waveIndex == 6)
                     Run.instance.nextStageScene = voidAbyssal;
-                if (judgementRun.currentWave == 8)
+                if (judgementRun.waveIndex == 8)
                     Run.instance.nextStageScene = voidMeadow;
-                if (judgementRun.currentWave == 10)
+                if (judgementRun.waveIndex == 10)
                 {
                     SceneDef sceneDef = SceneCatalog.FindSceneDef("moon2");
-                    Run.instance.nextStageScene = sceneDef;
-                }
-                if (judgementRun.shouldGoBazaar)
-                {
-                    SceneDef sceneDef = SceneCatalog.FindSceneDef("bazaar");
                     Run.instance.nextStageScene = sceneDef;
                 }
                 ReadOnlyCollection<CharacterMaster> onlyInstancesList = CharacterMaster.readOnlyInstancesList;
@@ -236,14 +296,14 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement") && self.isPlayerControlled && !self.HasBuff(RoR2Content.Buffs.Immune))
             {
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                if (!judgementRun.isFirstStage)
+
+                if (NetworkServer.active)
                 {
-                    Debug.LogWarning("Loading Persistent Stuff");
                     LoadPersistentHP(self);
                     LoadPersistentCurse(self);
                 }
 
-                if (Run.instance.selectedDifficulty >= DifficultyIndex.Eclipse1 && judgementRun.currentWave == 0)
+                if (Run.instance.selectedDifficulty >= DifficultyIndex.Eclipse1 && judgementRun.waveIndex == 0)
                     self.healthComponent.health = self.healthComponent.fullHealth;
 
                 self.baseDamage *= 1.25f;
