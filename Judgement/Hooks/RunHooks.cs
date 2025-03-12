@@ -37,8 +37,7 @@ namespace Judgement
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PreventPrinterCheese;
             On.RoR2.Run.PickNextStageScene += SetFirstStage;
-            On.RoR2.Run.Start += SeedRun;
-            On.RoR2.CharacterMaster.SpawnBody += CreateDropletsOnSpawn;
+            On.RoR2.CharacterMaster.OnBodyStart += CreateDropletsOnStart;
             On.RoR2.MusicController.PickCurrentTrack += SetJudgementMusic;
             On.EntityStates.Missions.BrotherEncounter.BossDeath.OnEnter += EndRun;
             On.RoR2.CharacterBody.Start += ManageSurvivorStats;
@@ -160,28 +159,18 @@ namespace Judgement
                 Log.Error("Judgement: FreeChest IL hook failed");
         }
 
-        private void SeedRun(On.RoR2.Run.orig_Start orig, Run self)
+        private void CreateDropletsOnStart(On.RoR2.CharacterMaster.orig_OnBodyStart orig, CharacterMaster self, CharacterBody body)
         {
-            orig(self);
-            if (self.name.Contains("Judgement") && NetworkServer.active)
-            {
-                JudgementRun judgementRun = self.gameObject.GetComponent<JudgementRun>();
-                Run.instance.runRNG = new Xoroshiro128Plus(self.seed ^ 1635UL);
-            }
-        }
-
-        private CharacterBody CreateDropletsOnSpawn(On.RoR2.CharacterMaster.orig_SpawnBody orig, CharacterMaster self, Vector3 position, Quaternion rotation)
-        {
+            orig(self, body);
             PlayerCharacterMasterController pcmc = self.GetComponent<PlayerCharacterMasterController>();
             if (Run.instance && Run.instance.name.Contains("Judgement") && pcmc && NetworkServer.active)
             {
                 string sceneName = SceneManager.GetActiveScene().name;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+                if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
+                    TeleportHelper.TeleportBody(body, new Vector3(127, 500, 101), false);
 
-                if (sceneName == "moon2" && pcmc)
-                    return orig(self, new Vector3(127, 500, 101), Quaternion.Euler(358, 210, 0));
-
-                if (sceneName != "moon2" && !self.IsExtraLifePendingServer())
+                if (sceneName != "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                 {
                     double angle = 360.0 / 5;
                     Vector3 velocity = Vector3.up * 10 + Vector3.forward * 2;
@@ -195,6 +184,9 @@ namespace Judgement
                     switch (judgementRun.waveIndex)
                     {
                         case 0:
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
+                            break;
                         case 4:
                             CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
                             CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
@@ -218,7 +210,7 @@ namespace Judgement
                         GenericPickupController.CreatePickupInfo pickupInfo = new GenericPickupController.CreatePickupInfo()
                         {
                             pickupIndex = pickupIndex,
-                            position = position + Vector3.up * 1.5f,
+                            position = body.corePosition + Vector3.up * 1.5f,
                             pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
                             prefabOverride = potentialPickup,
                         };
@@ -227,7 +219,6 @@ namespace Judgement
                     }
                 }
             }
-            return orig(self, position, rotation);
         }
 
         private static void SetJudgementMusic(On.RoR2.MusicController.orig_PickCurrentTrack orig, MusicController self, ref MusicTrackDef newTrack)
@@ -306,9 +297,23 @@ namespace Judgement
                 if (Run.instance.selectedDifficulty >= DifficultyIndex.Eclipse1 && judgementRun.waveIndex == 0)
                     self.healthComponent.health = self.healthComponent.fullHealth;
 
-                self.baseDamage *= 1.25f;
+                // self.baseDamage *= 1.25f;
                 self.baseRegen = 0f;
                 self.levelRegen = 0f;
+                string sceneName = SceneManager.GetActiveScene().name;
+
+                if (sceneName == "moon2" && self.isPlayerControlled)
+                {
+                    GameObject gameObject1 = GameObject.Find("HOLDER: Final Arena");
+                    if ((bool)gameObject1)
+                    {
+                        if (!gameObject1.transform.GetChild(3).gameObject.activeSelf)
+                        {
+                            Log.Info("Judgement: Mithrix mod found, increasing player base speed by 10%");
+                            self.baseMoveSpeed *= 1.1f;
+                        }
+                    }
+                }
             }
         }
 

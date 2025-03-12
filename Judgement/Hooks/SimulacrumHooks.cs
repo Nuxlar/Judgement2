@@ -31,7 +31,7 @@ namespace Judgement
                 if (self is InfiniteTowerBossWaveController)
                     self.baseCredits = 400;
                 else
-                    self.baseCredits = 125;
+                    self.baseCredits = 140;
                 // 159 500
             }
             orig(self);
@@ -63,8 +63,8 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 DifficultyDef difficultyDef = DifficultyCatalog.GetDifficultyDef(self.selectedDifficulty);
-                float num1 = 1.5f * self.waveIndex;
-                float num2 = 0.0506f * (difficultyDef.scalingValue * 2f);
+                float num1 = 1.5f * (self.waveIndex * 0.85f); // make scaling less harsh as the waves increase
+                float num2 = 0.0506f * (difficultyDef.scalingValue * 2f); // increase scaling since the run is shorter
                 float num3 = Mathf.Pow(1.02f, self.waveIndex);
                 self.difficultyCoefficient = (float)(1.0 + (double)num2 * (double)num1) * num3;
                 self.compensatedDifficultyCoefficient = self.difficultyCoefficient;

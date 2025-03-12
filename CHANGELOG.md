@@ -1,3 +1,14 @@
+**1.5.1**
+
+- Adds +10% base move speed bonus if a Mithrix mod (Umbral/Inferno) is installed (checks if arena ramps are missing)
+- Fixes items spawning on revive
+- Fixes spawn point when reviving on the moon
+- Tweaks scaling (less harsh in the later waves)
+- Increases base credits of non-boss waves (125 -> 140) 
+- Removes player base damage bonus (+25% -> 0%)
+- Changes item tier drops (prevent early snowballing)
+    - Stage 1: Red replaced with Green
+
 **1.5.0**
 
 - Updated for SOTS Phase 2
