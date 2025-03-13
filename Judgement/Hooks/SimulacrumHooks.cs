@@ -29,9 +29,6 @@ namespace Judgement
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
-                Debug.LogWarning(self.beginChatToken);
-                Debug.LogWarning(self.suddenDeathChatToken);
-
                 if (self is InfiniteTowerBossWaveController)
                     self.baseCredits = 400;
                 else
@@ -118,7 +115,7 @@ namespace Judgement
 
                     if (NetworkServer.active)
                     {
-                       // gameObject.AddComponent<CheckWavePickups>();
+                      // gameObject.AddComponent<CheckWavePickups>();
                         Vector3 position = self.safeWardController.transform.position;
 
                         if (judgementRun.waveIndex == 4 || judgementRun.waveIndex == 8)

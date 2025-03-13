@@ -1,9 +1,5 @@
 # Judgement
 
-# TODOs
-- Prevent SafeWard activation if items haven't been picked up
-- Add VoidSkybox to moon
-
 This mod adds a new game mode based on Judgement from Risk of Rain Returns, using Simulacrum as a base. 
 
 **Submit bug reports** using the link above or ping me in the Risk of Rain 2 Modding Discord's `tech-support` channel.

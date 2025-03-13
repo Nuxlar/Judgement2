@@ -1,4 +1,4 @@
-**1.5.1**
+**1.5.2**
 
 - Fixed clients in multiplayer not teleporting to the moon arena
 - Fixed E1's half HP applying in Judgement runs

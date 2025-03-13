@@ -5,32 +5,30 @@ using UnityEngine;
 
 public class CheckWavePickups : MonoBehaviour
 {
-    int pickupCount = 0;
+    List<GameObject> potentialList = new List<GameObject>();
 
-    private void Start()
+    public void AddPickup(GameObject pickup)
     {
-        if (Run.instance && Run.instance.name.Contains("Judgement"))
-        {
-            pickupCount = Run.instance.participatingPlayerCount;
-        }
-    }
-
-    public bool RemovePickup()
-    {
-        bool pickupRemoved = false;
-
-        if (pickupCount > 0)
-        {
-            pickupCount--;
-            pickupRemoved = true;
-        }
-
-        return pickupRemoved;
+        potentialList.Add(pickup);
     }
 
     public bool CanStartWave()
     {
         bool canStartWave = false;
+        Debug.LogWarning($"PotentialList Count Before {potentialList.Count}");
+        potentialList.RemoveAll(potential =>
+        {
+            Debug.LogWarning($"Potential object {potential}");
+            if (potential == null)
+            { return true; }
+            else return false;
+        });
+        Debug.LogWarning($"PotentialList Count After {potentialList.Count}");
+
+        if (potentialList.Count <= 0)
+            canStartWave = true;
+
+        Debug.LogWarning($"Can Start Wave? {canStartWave}");
 
         return canStartWave;
     }

@@ -7,6 +7,7 @@ using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using EntityStates.Missions.BrotherEncounter;
 using MonoMod.Cil;
+using RoR2.Artifacts;
 
 namespace Judgement
 {
@@ -31,14 +32,15 @@ namespace Judgement
         private GameEndingDef judgementRunEnding = Addressables.LoadAssetAsync<GameEndingDef>("RoR2/Base/WeeklyRun/PrismaticTrialEnding.asset").WaitForCompletion();
 
         private GameObject tpOutController = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/TeleportOutController.prefab").WaitForCompletion();
-        private GameObject voidSkybox = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/voidraid/Weather, Void Raid.prefab").WaitForCompletion();
+        // private GameObject voidSkybox = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/voidraid/Weather, Void Raid.prefab").WaitForCompletion();
 
         public RunHooks()
         {
-            voidSkybox.AddComponent<NetworkIdentity>();
+            // voidSkybox.AddComponent<NetworkIdentity>();
 
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
-            On.RoR2.SceneDirector.Start += AddVoidSkyToMoon;
+            // On.RoR2.SceneDirector.Start += AddVoidSkyToMoon;
+           // On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += TrackPotentials;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PreventPrinterCheese;
             On.RoR2.Run.PickNextStageScene += SetFirstStage;
             On.RoR2.CharacterMaster.OnBodyStart += CreateDropletsOnStart;
@@ -48,32 +50,44 @@ namespace Judgement
             On.RoR2.SceneExitController.Begin += ManageStageSelection;
         }
 
-        private void AddVoidSkyToMoon(On.RoR2.SceneDirector.orig_Start orig, SceneDirector self)
+        private void TrackPotentials(
+            On.RoR2.PickupDropletController.orig_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 orig,
+            GenericPickupController.CreatePickupInfo pickupInfo,
+            Vector3 position,
+            Vector3 velocity
+            )
         {
-            orig(self);
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
-                string sceneName = SceneManager.GetActiveScene().name;
-                if (sceneName == "moon2")
+                JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+                if (judgementRun.safeWardController)
                 {
-                    /*
-                    GameObject moonAmb = GameObject.Find("PP + Amb");
-                    if (moonAmb)
+                    CheckWavePickups pickupChecker = judgementRun.safeWardController.gameObject.GetComponent<CheckWavePickups>();
+                    Debug.LogWarning($"Pickup Checker? {pickupChecker}");
+                    if (pickupChecker)
                     {
-                        moonAmb.SetActive(false);
-                    }
-                    */
-                    GameObject gameObject = UnityEngine.Object.Instantiate(voidSkybox, Vector3.zero, Quaternion.identity);
-                    if (NetworkServer.active)
+                        if (CommandArtifactManager.IsCommandArtifactEnabled)
+                            pickupInfo.artifactFlag |= GenericPickupController.PickupArtifactFlag.COMMAND;
+
+                        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(PickupDropletController.pickupDropletPrefab, position, Quaternion.identity);
+                        PickupDropletController component1 = gameObject.GetComponent<PickupDropletController>();
+                        if ((bool)component1)
+                        {
+                            component1.createPickupInfo = pickupInfo;
+                            component1.NetworkpickupIndex = pickupInfo.pickupIndex;
+                        }
+                        Rigidbody component2 = gameObject.GetComponent<Rigidbody>();
+                        component2.velocity = velocity;
+                        component2.AddTorque(UnityEngine.Random.Range(150f, 120f) * UnityEngine.Random.onUnitSphere);
+                             pickupChecker.AddPickup(gameObject);
+                        Debug.LogWarning("Added Pickup");
                         NetworkServer.Spawn(gameObject);
-
-                    GameObject moonSkybox = GameObject.Find("HOLDER: Skybox");
-                    if (moonSkybox)
-                        moonSkybox.SetActive(false);
-
-                        
+                    }
+                    else orig(pickupInfo, position, velocity);
                 }
+                else orig(pickupInfo, position, velocity);
             }
+            else orig(pickupInfo, position, velocity);
         }
 
         private void PreventPrinterCheese(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
@@ -113,13 +127,12 @@ namespace Judgement
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
                 if (judgementRun.waveIndex == 0)
                 {
-                    /*
                     SceneDef sceneDef = SceneCatalog.FindSceneDef("itgolemplains");
                     self.nextStageScene = sceneDef;
-                    */
-                    // Testing
+                    /* Moon Testing
                     SceneDef sceneDef = SceneCatalog.FindSceneDef("moon2");
                     self.nextStageScene = sceneDef;
+                    */
                 }
             }
             else
@@ -385,6 +398,33 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
                 Run.instance.BeginGameOver(judgementRunEnding);
         }
+        /*
+        private void AddVoidSkyToMoon(On.RoR2.SceneDirector.orig_Start orig, SceneDirector self)
+        {
+            orig(self);
+            if (Run.instance && Run.instance.name.Contains("Judgement"))
+            {
+                string sceneName = SceneManager.GetActiveScene().name;
+                if (sceneName == "moon2")
+                {
+                    GameObject moonAmb = GameObject.Find("PP + Amb");
+                    if (moonAmb)
+                    {
+                        moonAmb.SetActive(false);
+                    }
+                    
+                    GameObject gameObject = UnityEngine.Object.Instantiate(voidSkybox, Vector3.zero, Quaternion.identity);
+                    if (NetworkServer.active)
+                        NetworkServer.Spawn(gameObject);
 
+                    GameObject moonSkybox = GameObject.Find("HOLDER: Skybox");
+                    if (moonSkybox)
+                        moonSkybox.SetActive(false);
+
+                        
+                }
+            }
+        }
+*/
     }
 }
