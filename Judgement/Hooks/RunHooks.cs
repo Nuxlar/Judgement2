@@ -31,10 +31,12 @@ namespace Judgement
         private GameEndingDef judgementRunEnding = Addressables.LoadAssetAsync<GameEndingDef>("RoR2/Base/WeeklyRun/PrismaticTrialEnding.asset").WaitForCompletion();
 
         private GameObject tpOutController = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/TeleportOutController.prefab").WaitForCompletion();
+        private GameObject voidSkybox = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/Weather, InfiniteTower.prefab").WaitForCompletion();
 
         public RunHooks()
         {
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
+            On.RoR2.SceneDirector.Start += AddVoidSkyToMoon;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PreventPrinterCheese;
             On.RoR2.Run.PickNextStageScene += SetFirstStage;
             On.RoR2.CharacterMaster.OnBodyStart += CreateDropletsOnStart;
@@ -42,6 +44,20 @@ namespace Judgement
             On.EntityStates.Missions.BrotherEncounter.BossDeath.OnEnter += EndRun;
             On.RoR2.CharacterBody.Start += ManageSurvivorStats;
             On.RoR2.SceneExitController.Begin += ManageStageSelection;
+        }
+
+        private void AddVoidSkyToMoon(On.RoR2.SceneDirector.orig_Start orig, SceneDirector self)
+        {
+            orig(self);
+            if (Run.instance && Run.instance.name.Contains("Judgement") && NetworkServer.active)
+            {
+                string sceneName = SceneManager.GetActiveScene().name;
+                if (sceneName == "moon2")
+                {
+                    GameObject gameObject = UnityEngine.Object.Instantiate(voidSkybox, Vector3.zero, Quaternion.identity);
+                    NetworkServer.Spawn(gameObject);
+                }
+            }
         }
 
         private void PreventPrinterCheese(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
@@ -81,7 +97,12 @@ namespace Judgement
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
                 if (judgementRun.waveIndex == 0)
                 {
+                    /*
                     SceneDef sceneDef = SceneCatalog.FindSceneDef("itgolemplains");
+                    self.nextStageScene = sceneDef;
+                    */
+                    // Testing
+                    SceneDef sceneDef = SceneCatalog.FindSceneDef("moon2");
                     self.nextStageScene = sceneDef;
                 }
             }
@@ -167,8 +188,30 @@ namespace Judgement
             {
                 string sceneName = SceneManager.GetActiveScene().name;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+                if (Run.instance.selectedDifficulty > DifficultyIndex.Eclipse1 && (body.HasBuff(RoR2Content.Buffs.Immune) || judgementRun.waveIndex == 0))
+                {
+                    HealthComponent healthComponent = body.healthComponent;
+                    if ((bool)healthComponent)
+                        healthComponent.Networkhealth = healthComponent.fullHealth;
+                }
+
                 if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
-                    TeleportHelper.TeleportBody(body, new Vector3(127, 500, 101), false);
+                {
+                    Debug.LogWarning($"Spawning into moon arena");
+                    Vector3 center = new Vector3(127, 500, 101);
+                    float maxRadius = 5f; // Set your desired radius here
+
+                    float randomAngle = UnityEngine.Random.Range(0f, 360f);
+                    float randomDistance = maxRadius * Mathf.Sqrt(UnityEngine.Random.Range(0f, 1f));
+
+                    Vector3 randomPos = center + new Vector3(
+                        randomDistance * Mathf.Cos(randomAngle * Mathf.Deg2Rad),
+                        0f, // Keeps the same Y coordinate
+                        randomDistance * Mathf.Sin(randomAngle * Mathf.Deg2Rad)
+                    );
+                    Debug.LogWarning($"Teleporting {body.netId} to {randomPos}");
+                    TeleportHelper.TeleportBody(body, randomPos, false);
+                }
 
                 if (sceneName != "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                 {

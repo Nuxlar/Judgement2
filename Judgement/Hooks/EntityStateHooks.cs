@@ -17,9 +17,25 @@ namespace Judgement
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
-                self.radius = 30f;
+                if (self.radius != 30f)
+                    self.radius = 30f;
+                /*
+                CheckWavePickups pickupChecker = self.gameObject.GetComponent<CheckWavePickups>();
+                if (pickupChecker)
+                {
+                    if (!pickupChecker.CanStartWave())
+                    {
+                        Chat.SendBroadcastChat(new Chat.SimpleChatMessage()
+                        {
+                            baseToken = "<color=#c6d5ff><size=120%>Mithrix: Perish.</color></size>"
+                        });
+                    }
+                }
+                else Log.Error("Judgement: SafeWard has no CHeckWavePickups component!");
+*/
+                orig(self);
             }
-            orig(self);
+            else orig(self);
         }
 
         private void ChangeActiveWardRadius(On.EntityStates.InfiniteTowerSafeWard.Active.orig_OnEnter orig, Active self)

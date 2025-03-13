@@ -3,6 +3,7 @@ using RoR2;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 namespace Judgement
 {
@@ -28,6 +29,9 @@ namespace Judgement
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
+                Debug.LogWarning(self.beginChatToken);
+                Debug.LogWarning(self.suddenDeathChatToken);
+
                 if (self is InfiniteTowerBossWaveController)
                     self.baseCredits = 400;
                 else
@@ -63,7 +67,7 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 DifficultyDef difficultyDef = DifficultyCatalog.GetDifficultyDef(self.selectedDifficulty);
-                float num1 = 1.5f * (self.waveIndex * 0.85f); // make scaling less harsh as the waves increase
+                float num1 = 1.5f * (self.waveIndex * 0.9f); // make scaling less harsh as the waves increase
                 float num2 = 0.0506f * (difficultyDef.scalingValue * 2f); // increase scaling since the run is shorter
                 float num3 = Mathf.Pow(1.02f, self.waveIndex);
                 self.difficultyCoefficient = (float)(1.0 + (double)num2 * (double)num1) * num3;
@@ -84,7 +88,9 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                if (judgementRun.waveIndex == 10)
+                string sceneName = SceneManager.GetActiveScene().name;
+
+                if (sceneName == "moon2")
                 {
                     GameObject director = GameObject.Find("Director");
                     if (director && NetworkServer.active)
@@ -112,6 +118,7 @@ namespace Judgement
 
                     if (NetworkServer.active)
                     {
+                       // gameObject.AddComponent<CheckWavePickups>();
                         Vector3 position = self.safeWardController.transform.position;
 
                         if (judgementRun.waveIndex == 4 || judgementRun.waveIndex == 8)
