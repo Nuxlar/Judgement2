@@ -219,7 +219,6 @@ namespace Judgement
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
                 if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                 {
-                    Debug.LogWarning($"Spawning into moon arena");
                     Vector3 center = new Vector3(127, 500, 101);
                     float maxRadius = 5f; // Set your desired radius here
 
@@ -231,7 +230,7 @@ namespace Judgement
                         0f, // Keeps the same Y coordinate
                         randomDistance * Mathf.Sin(randomAngle * Mathf.Deg2Rad)
                     );
-                    Debug.LogWarning($"Teleporting {body.netId} to {randomPos}");
+                    
                     TeleportHelper.TeleportBody(body, randomPos, false);
                 }
 
