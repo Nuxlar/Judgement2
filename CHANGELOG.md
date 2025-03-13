@@ -1,5 +1,11 @@
 **1.5.1**
 
+- Fixed clients in multiplayer not teleporting to the moon arena
+- Fixed E1's half HP applying in Judgement runs
+- Tweaks scaling (slightly increased for later waves)
+
+**1.5.1**
+
 - Adds +10% base move speed bonus if a Mithrix mod (Umbral/Inferno) is installed (checks if arena ramps are missing)
 - Fixes items spawning on revive
 - Fixes spawn point when reviving on the moon

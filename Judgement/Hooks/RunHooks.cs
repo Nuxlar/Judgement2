@@ -31,10 +31,12 @@ namespace Judgement
         private GameEndingDef judgementRunEnding = Addressables.LoadAssetAsync<GameEndingDef>("RoR2/Base/WeeklyRun/PrismaticTrialEnding.asset").WaitForCompletion();
 
         private GameObject tpOutController = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/TeleportOutController.prefab").WaitForCompletion();
-        private GameObject voidSkybox = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerAssets/Weather, InfiniteTower.prefab").WaitForCompletion();
+        private GameObject voidSkybox = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/voidraid/Weather, Void Raid.prefab").WaitForCompletion();
 
         public RunHooks()
         {
+            voidSkybox.AddComponent<NetworkIdentity>();
+
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
             On.RoR2.SceneDirector.Start += AddVoidSkyToMoon;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PreventPrinterCheese;
@@ -49,13 +51,27 @@ namespace Judgement
         private void AddVoidSkyToMoon(On.RoR2.SceneDirector.orig_Start orig, SceneDirector self)
         {
             orig(self);
-            if (Run.instance && Run.instance.name.Contains("Judgement") && NetworkServer.active)
+            if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 string sceneName = SceneManager.GetActiveScene().name;
                 if (sceneName == "moon2")
                 {
+                    /*
+                    GameObject moonAmb = GameObject.Find("PP + Amb");
+                    if (moonAmb)
+                    {
+                        moonAmb.SetActive(false);
+                    }
+                    */
                     GameObject gameObject = UnityEngine.Object.Instantiate(voidSkybox, Vector3.zero, Quaternion.identity);
-                    NetworkServer.Spawn(gameObject);
+                    if (NetworkServer.active)
+                        NetworkServer.Spawn(gameObject);
+
+                    GameObject moonSkybox = GameObject.Find("HOLDER: Skybox");
+                    if (moonSkybox)
+                        moonSkybox.SetActive(false);
+
+                        
                 }
             }
         }
@@ -184,17 +200,10 @@ namespace Judgement
         {
             orig(self, body);
             PlayerCharacterMasterController pcmc = self.GetComponent<PlayerCharacterMasterController>();
-            if (Run.instance && Run.instance.name.Contains("Judgement") && pcmc && NetworkServer.active)
+            if (Run.instance && Run.instance.name.Contains("Judgement") && pcmc)
             {
                 string sceneName = SceneManager.GetActiveScene().name;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                if (Run.instance.selectedDifficulty > DifficultyIndex.Eclipse1 && (body.HasBuff(RoR2Content.Buffs.Immune) || judgementRun.waveIndex == 0))
-                {
-                    HealthComponent healthComponent = body.healthComponent;
-                    if ((bool)healthComponent)
-                        healthComponent.Networkhealth = healthComponent.fullHealth;
-                }
-
                 if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                 {
                     Debug.LogWarning($"Spawning into moon arena");
@@ -213,52 +222,62 @@ namespace Judgement
                     TeleportHelper.TeleportBody(body, randomPos, false);
                 }
 
-                if (sceneName != "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
+                if (NetworkServer.active)
                 {
-                    double angle = 360.0 / 5;
-                    Vector3 velocity = Vector3.up * 10 + Vector3.forward * 2;
-                    Vector3 up = Vector3.up;
-                    Quaternion quaternion = Quaternion.AngleAxis((float)angle, up);
-
-                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
-                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
-                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
-
-                    switch (judgementRun.waveIndex)
+                    if (Run.instance.selectedDifficulty > DifficultyIndex.Eclipse1 && (body.HasBuff(RoR2Content.Buffs.Immune) || judgementRun.waveIndex == 0))
                     {
-                        case 0:
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                            CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
-                            break;
-                        case 4:
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
-                            CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
-                            break;
-                        case 6:
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Boss), dtYellow, Run.instance.runRNG);
-                            break;
-                        case 8:
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                            break;
-                        default:
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                            break;
+                        HealthComponent healthComponent = body.healthComponent;
+                        if ((bool)healthComponent)
+                            healthComponent.Networkhealth = healthComponent.fullHealth;
                     }
 
-                    void CreateDrop(PickupIndex pickupIndex, BasicPickupDropTable dropTable, Xoroshiro128Plus rng)
+                    if (sceneName != "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                     {
-                        GenericPickupController.CreatePickupInfo pickupInfo = new GenericPickupController.CreatePickupInfo()
+                        double angle = 360.0 / 5;
+                        Vector3 velocity = Vector3.up * 10 + Vector3.forward * 2;
+                        Vector3 up = Vector3.up;
+                        Quaternion quaternion = Quaternion.AngleAxis((float)angle, up);
+
+                        CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+                        CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+                        CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+
+                        switch (judgementRun.waveIndex)
                         {
-                            pickupIndex = pickupIndex,
-                            position = body.corePosition + Vector3.up * 1.5f,
-                            pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
-                            prefabOverride = potentialPickup,
-                        };
-                        PickupDropletController.CreatePickupDroplet(pickupInfo, pickupInfo.position, velocity);
-                        velocity = quaternion * velocity;
+                            case 0:
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
+                                break;
+                            case 4:
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
+                                CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
+                                break;
+                            case 6:
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Boss), dtYellow, Run.instance.runRNG);
+                                break;
+                            case 8:
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                break;
+                            default:
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                break;
+                        }
+
+                        void CreateDrop(PickupIndex pickupIndex, BasicPickupDropTable dropTable, Xoroshiro128Plus rng)
+                        {
+                            GenericPickupController.CreatePickupInfo pickupInfo = new GenericPickupController.CreatePickupInfo()
+                            {
+                                pickupIndex = pickupIndex,
+                                position = body.corePosition + Vector3.up * 1.5f,
+                                pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
+                                prefabOverride = potentialPickup,
+                            };
+                            PickupDropletController.CreatePickupDroplet(pickupInfo, pickupInfo.position, velocity);
+                            velocity = quaternion * velocity;
+                        }
                     }
                 }
             }

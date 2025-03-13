@@ -1,9 +1,6 @@
 # Judgement
 
 # TODOs
-- Fix clients not teleporting on the moon
-- Fix E1 applying DONE
-- Increase scaling slightly DONE
 - Prevent SafeWard activation if items haven't been picked up
 - Add VoidSkybox to moon
 
