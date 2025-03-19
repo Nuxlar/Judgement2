@@ -102,8 +102,13 @@ namespace Judgement
                         judgementRun.persistentCurse[body.master.netId] += 20;
                     else
                         judgementRun.persistentCurse.Add(body.master.netId, 20);
-                    for (int i = 0; i < 20; i++)
-                        body.AddBuff(RoR2Content.Buffs.PermanentCurse);
+
+                    if (Run.instance.selectedDifficulty < DifficultyIndex.Eclipse8)
+                    {
+                        for (int i = 0; i < 20; i++)
+                            body.AddBuff(RoR2Content.Buffs.PermanentCurse);
+                    }
+
                     orig(self, activator);
                 }
                 else if (self.name == "DuplicatorLarge(Clone)")
@@ -213,82 +218,86 @@ namespace Judgement
         {
             orig(self, body);
             PlayerCharacterMasterController pcmc = self.GetComponent<PlayerCharacterMasterController>();
-            if (Run.instance && Run.instance.name.Contains("Judgement") && pcmc)
+            if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 string sceneName = SceneManager.GetActiveScene().name;
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-                if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
+
+                if (Run.instance.selectedDifficulty > DifficultyIndex.Eclipse1 && body.teamComponent && body.teamComponent.teamIndex == TeamIndex.Player && (!body.HasBuff(RoR2Content.Buffs.Immune) || judgementRun.waveIndex == 0))
                 {
-                    Vector3 center = new Vector3(127, 500, 101);
-                    float maxRadius = 5f; // Set your desired radius here
-
-                    float randomAngle = UnityEngine.Random.Range(0f, 360f);
-                    float randomDistance = maxRadius * Mathf.Sqrt(UnityEngine.Random.Range(0f, 1f));
-
-                    Vector3 randomPos = center + new Vector3(
-                        randomDistance * Mathf.Cos(randomAngle * Mathf.Deg2Rad),
-                        0f, // Keeps the same Y coordinate
-                        randomDistance * Mathf.Sin(randomAngle * Mathf.Deg2Rad)
-                    );
-                    
-                    TeleportHelper.TeleportBody(body, randomPos, false);
+                    HealthComponent healthComponent = body.healthComponent;
+                    if ((bool)healthComponent)
+                        healthComponent.Networkhealth = healthComponent.fullHealth;
                 }
-
-                if (NetworkServer.active)
-                {
-                    if (Run.instance.selectedDifficulty > DifficultyIndex.Eclipse1 && (body.HasBuff(RoR2Content.Buffs.Immune) || judgementRun.waveIndex == 0))
+                if (pcmc)
+                { 
+                    if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                     {
-                        HealthComponent healthComponent = body.healthComponent;
-                        if ((bool)healthComponent)
-                            healthComponent.Networkhealth = healthComponent.fullHealth;
+                        Vector3 center = new Vector3(127, 500, 101);
+                        float maxRadius = 5f; // Set your desired radius here
+
+                        float randomAngle = UnityEngine.Random.Range(0f, 360f);
+                        float randomDistance = maxRadius * Mathf.Sqrt(UnityEngine.Random.Range(0f, 1f));
+
+                        Vector3 randomPos = center + new Vector3(
+                            randomDistance * Mathf.Cos(randomAngle * Mathf.Deg2Rad),
+                            0f, // Keeps the same Y coordinate
+                            randomDistance * Mathf.Sin(randomAngle * Mathf.Deg2Rad)
+                        );
+
+                        TeleportHelper.TeleportBody(body, randomPos, false);
                     }
 
-                    if (sceneName != "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
+                    if (NetworkServer.active)
                     {
-                        double angle = 360.0 / 5;
-                        Vector3 velocity = Vector3.up * 10 + Vector3.forward * 2;
-                        Vector3 up = Vector3.up;
-                        Quaternion quaternion = Quaternion.AngleAxis((float)angle, up);
 
-                        CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
-                        CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
-                        CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
-
-                        switch (judgementRun.waveIndex)
+                        if (sceneName != "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                         {
-                            case 0:
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                                CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
-                                break;
-                            case 4:
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
-                                CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
-                                break;
-                            case 6:
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Boss), dtYellow, Run.instance.runRNG);
-                                break;
-                            case 8:
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                                break;
-                            default:
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                                CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
-                                break;
-                        }
+                            double angle = 360.0 / 5;
+                            Vector3 velocity = Vector3.up * 10 + Vector3.forward * 2;
+                            Vector3 up = Vector3.up;
+                            Quaternion quaternion = Quaternion.AngleAxis((float)angle, up);
 
-                        void CreateDrop(PickupIndex pickupIndex, BasicPickupDropTable dropTable, Xoroshiro128Plus rng)
-                        {
-                            GenericPickupController.CreatePickupInfo pickupInfo = new GenericPickupController.CreatePickupInfo()
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+                            CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier1), dtWhite, Run.instance.runRNG);
+
+                            switch (judgementRun.waveIndex)
                             {
-                                pickupIndex = pickupIndex,
-                                position = body.corePosition + Vector3.up * 1.5f,
-                                pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
-                                prefabOverride = potentialPickup,
-                            };
-                            PickupDropletController.CreatePickupDroplet(pickupInfo, pickupInfo.position, velocity);
-                            velocity = quaternion * velocity;
+                                case 0:
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                    CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
+                                    break;
+                                case 4:
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
+                                    CreateDrop(PickupCatalog.FindPickupIndex(EquipmentCatalog.FindEquipmentIndex("LifestealOnHit")), dtEquip, Run.instance.runRNG);
+                                    break;
+                                case 6:
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Boss), dtYellow, Run.instance.runRNG);
+                                    break;
+                                case 8:
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier3), dtRed, Run.instance.runRNG);
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                    break;
+                                default:
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                    CreateDrop(PickupCatalog.FindPickupIndex(ItemTier.Tier2), dtGreen, Run.instance.runRNG);
+                                    break;
+                            }
+
+                            void CreateDrop(PickupIndex pickupIndex, BasicPickupDropTable dropTable, Xoroshiro128Plus rng)
+                            {
+                                GenericPickupController.CreatePickupInfo pickupInfo = new GenericPickupController.CreatePickupInfo()
+                                {
+                                    pickupIndex = pickupIndex,
+                                    position = body.corePosition + Vector3.up * 1.5f,
+                                    pickerOptions = PickupPickerController.GenerateOptionsFromDropTable(3, dropTable, rng),
+                                    prefabOverride = potentialPickup,
+                                };
+                                PickupDropletController.CreatePickupDroplet(pickupInfo, pickupInfo.position, velocity);
+                                velocity = quaternion * velocity;
+                            }
                         }
                     }
                 }
@@ -383,8 +392,8 @@ namespace Judgement
                     {
                         if (!gameObject1.transform.GetChild(3).gameObject.activeSelf)
                         {
-                            Log.Info("Judgement: Mithrix mod found, increasing player base speed by 10%");
-                            self.baseMoveSpeed *= 1.1f;
+                            Log.Info("Judgement: Mithrix mod found, increasing player base speed by 20%");
+                            self.baseMoveSpeed *= 1.2f;
                         }
                     }
                 }

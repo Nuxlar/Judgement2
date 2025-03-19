@@ -1,3 +1,9 @@
+**1.5.3**
+
+- Increases Mithrix mod speed boost by 10% (20% base movement added total)
+- Fixes allies' (engi turrets) HP being reduced by Eclipse 1
+- Fixes Void Cradle curse being applied twice on Eclipse 8
+
 **1.5.2**
 
 - Fixed clients in multiplayer not teleporting to the moon arena

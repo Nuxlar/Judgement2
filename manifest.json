@@ -1,6 +1,6 @@
 ﻿{
 	"name": "Judgement",
-	"version_number": "1.5.2",
+	"version_number": "1.5.3",
 	"website_url": "https://github.com/Nuxlar/Judgement2/issues",
 	"description": "New GameMode based on Risk of Rain Returns. Now with multiplayer support!",
 	"dependencies": [

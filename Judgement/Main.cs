@@ -12,7 +12,7 @@ namespace Judgement
     public const string PluginGUID = PluginAuthor + "." + PluginName;
     public const string PluginAuthor = "Nuxlar";
     public const string PluginName = "Judgement";
-    public const string PluginVersion = "1.5.2";
+    public const string PluginVersion = "1.5.3";
 
     internal static Main Instance { get; private set; }
     public static string PluginDirectory { get; private set; }
