@@ -22,41 +22,6 @@ namespace Judgement
         public CreateGameMode()
         {
             CreateJudgementRun();
-
-            IL.RoR2.UI.MainMenu.MultiplayerMenuController.BuildGameModeChoices += AddGameModeToMultiplayer;
-            On.RoR2.GameModeCatalog.SetGameModes += SortGameModes;
-            On.RoR2.UI.LanguageTextMeshController.Start += AddGameModeButton;
-        }
-
-        private static void AddGameModeToMultiplayer(ILContext il)
-        {
-            ILCursor c = new ILCursor(il);
-            if (c.TryGotoNext(MoveType.After, 
-                x => x.MatchCallvirt(typeof(System.Collections.Generic.List<string>).GetMethod("Contains"))
-                ))
-            {
-                c.Emit(OpCodes.Pop); // Remove the original result
-                c.Emit(OpCodes.Ldc_I4_1); // Return true
-            }
-            else Log.Error("Judgement: Failed to apply AddGameModeToMultiplayer IL Hook");
-        }
-
-        private void SortGameModes(
-          On.RoR2.GameModeCatalog.orig_SetGameModes orig,
-          Run[] newGameModePrefabComponents)
-        {
-            Array.Sort(newGameModePrefabComponents, (a, b) => string.CompareOrdinal(a.name, b.name));
-            orig(newGameModePrefabComponents);
-        }
-
-        private void AddGameModeButton(
-          On.RoR2.UI.LanguageTextMeshController.orig_Start orig,
-          LanguageTextMeshController self)
-        {
-            orig(self);
-            if (!(self.token == "TITLE_ECLIPSE") || !(bool)self.GetComponent<HGButton>())
-                return;
-            self.transform.parent.gameObject.AddComponent<JudgementRunButtonAdder>();
         }
 
         private void CreateJudgementRun()
@@ -64,6 +29,9 @@ namespace Judgement
             judgementRunPrefab = PrefabAPI.InstantiateClone(new GameObject("xJudgementRun"), "xJudgementRun");
             judgementRunPrefab.AddComponent<NetworkIdentity>();
             PrefabAPI.RegisterNetworkPrefab(judgementRunPrefab);
+
+            GameModeInfo gameModeInfo = judgementRunPrefab.AddComponent<GameModeInfo>();
+            gameModeInfo.buttonHoverDescription = "Defeat all that stand before you to reach the final throne.";
 
             InfiniteTowerRun component2 = simClone.GetComponent<InfiniteTowerRun>();
 
@@ -138,33 +106,6 @@ namespace Judgement
             judgementRunPrefab.AddComponent<RunCameraManager>();
 
             ContentAddition.AddGameMode(judgementRunPrefab);
-        }
-
-        public class JudgementRunButton : MonoBehaviour
-        {
-            public HGButton hgButton;
-
-            public void Start()
-            {
-                this.hgButton = this.GetComponent<HGButton>();
-                this.hgButton.onClick = new Button.ButtonClickedEvent();
-                this.hgButton.onClick.AddListener(() =>
-                {
-                    int num = (int)Util.PlaySound("Play_UI_menuClick", RoR2Application.instance.gameObject);
-                    RoR2.Console.instance.SubmitCmd(null, "transition_command \"gamemode xJudgementRun; host 0; \"");
-                });
-            }
-        }
-
-        public class JudgementRunButtonAdder : MonoBehaviour
-        {
-            public void Start()
-            {
-                GameObject gameObject = Instantiate(this.transform.Find("GenericMenuButton (Eclipse)").gameObject, this.transform);
-                gameObject.AddComponent<JudgementRunButton>();
-                gameObject.GetComponent<LanguageTextMeshController>().token = "Judgement";
-                gameObject.GetComponent<HGButton>().hoverToken = "Defeat all that stand before you to reach the final throne.";
-            }
         }
     }
 }

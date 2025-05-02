@@ -1,3 +1,7 @@
+**1.5.4**
+
+- Internal code changes for R2API.ContentAddition update
+
 **1.5.3**
 
 - Increases Mithrix mod speed boost by 10% (20% base movement added total)
