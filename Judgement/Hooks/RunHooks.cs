@@ -40,7 +40,7 @@ namespace Judgement
 
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
             // On.RoR2.SceneDirector.Start += AddVoidSkyToMoon;
-           // On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += TrackPotentials;
+            // On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += TrackPotentials;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PreventPrinterCheese;
             On.RoR2.Run.PickNextStageScene += SetFirstStage;
             On.RoR2.CharacterMaster.OnBodyStart += CreateDropletsOnStart;
@@ -79,7 +79,7 @@ namespace Judgement
                         Rigidbody component2 = gameObject.GetComponent<Rigidbody>();
                         component2.velocity = velocity;
                         component2.AddTorque(UnityEngine.Random.Range(150f, 120f) * UnityEngine.Random.onUnitSphere);
-                             pickupChecker.AddPickup(gameObject);
+                        pickupChecker.AddPickup(gameObject);
                         Debug.LogWarning("Added Pickup");
                         NetworkServer.Spawn(gameObject);
                     }
@@ -230,7 +230,7 @@ namespace Judgement
                         healthComponent.Networkhealth = healthComponent.fullHealth;
                 }
                 if (pcmc)
-                { 
+                {
                     if (sceneName == "moon2" && !body.HasBuff(RoR2Content.Buffs.Immune))
                     {
                         Vector3 center = new Vector3(127, 500, 101);
@@ -381,8 +381,8 @@ namespace Judgement
                     self.healthComponent.health = self.healthComponent.fullHealth;
 
                 // self.baseDamage *= 1.25f;
-                self.baseRegen = 0f;
-                self.levelRegen = 0f;
+                // self.baseRegen = 0f;
+                //self.levelRegen = 0f;
                 string sceneName = SceneManager.GetActiveScene().name;
 
                 if (sceneName == "moon2" && self.isPlayerControlled)
@@ -392,8 +392,8 @@ namespace Judgement
                     {
                         if (!gameObject1.transform.GetChild(3).gameObject.activeSelf)
                         {
-                            Log.Info("Judgement: Mithrix mod found, increasing player base speed by 20%");
-                            self.baseMoveSpeed *= 1.2f;
+                            Log.Info("Judgement: Mithrix mod found, increasing player base speed by 25%");
+                            self.baseMoveSpeed *= 1.25f;
                         }
                     }
                 }

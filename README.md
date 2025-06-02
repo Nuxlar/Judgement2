@@ -9,9 +9,8 @@ This mod adds a new game mode based on Judgement from Risk of Rain Returns, usin
 The following list should answer any questions you may have about the mod:
 
 - This mod is compatible with Mithrix mods such as Umbral, Inferno, and AotK.
-- You have no base regen.
 - Your health and gold persist between stages. 
-- Scaling is balanced around Monsoon, modded difficulties with higher scaling might make the run impossible.
+- Uses Monsoon scaling, so modded difficulty scaling won't apply but other effects of the difficulty will. (higher scaling makes runs practically impossible)
 - There are 5 rounds, 2 waves each (10 total waves).
 - Each round has a normal enemy wave, then a boss wave.
 - Items spawn around each player when spawning in.

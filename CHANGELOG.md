@@ -1,3 +1,12 @@
+**1.5.5**
+
+- Fixes scaling being too harsh (way too many enemies were spawning)
+- Fixes scaling on modded difficulties making runs impossible (scaling remains consistent regardless of difficulty, but other difficulty affects still apply, such as eclipse or modded difficulties)
+- Slightly decreases base credits for pre-boss waves
+- Re-adds base regen (doesn't feel that impactful since healing items are still available)
+- Increased spawn distance of interactables (key/printer) to lessen the chance of them not spawning at all
+- Increases base speed bonus with umbral (20% -> 25%)
+
 **1.5.4**
 
 - Internal code changes for R2API.ContentAddition update

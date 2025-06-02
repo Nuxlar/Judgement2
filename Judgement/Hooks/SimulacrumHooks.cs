@@ -32,7 +32,7 @@ namespace Judgement
                 if (self is InfiniteTowerBossWaveController)
                     self.baseCredits = 400;
                 else
-                    self.baseCredits = 140;
+                    self.baseCredits = 130;
                 // 159 500
             }
             orig(self);
@@ -63,8 +63,8 @@ namespace Judgement
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
-                DifficultyDef difficultyDef = DifficultyCatalog.GetDifficultyDef(self.selectedDifficulty);
-                float num1 = 1.5f * (self.waveIndex * 0.9f); // make scaling less harsh as the waves increase
+                DifficultyDef difficultyDef = DifficultyCatalog.GetDifficultyDef(DifficultyIndex.Hard);
+                float num1 = 1.5f * (self.waveIndex * 0.8f); // make scaling less harsh as the waves increase
                 float num2 = 0.0506f * (difficultyDef.scalingValue * 2f); // increase scaling since the run is shorter
                 float num3 = Mathf.Pow(1.02f, self.waveIndex);
                 self.difficultyCoefficient = (float)(1.0 + (double)num2 * (double)num1) * num3;
@@ -115,7 +115,7 @@ namespace Judgement
 
                     if (NetworkServer.active)
                     {
-                      // gameObject.AddComponent<CheckWavePickups>();
+                        // gameObject.AddComponent<CheckWavePickups>();
                         Vector3 position = self.safeWardController.transform.position;
 
                         if (judgementRun.waveIndex == 4 || judgementRun.waveIndex == 8)
@@ -174,7 +174,7 @@ namespace Judgement
             placementRule.placementMode = DirectorPlacementRule.PlacementMode.Approximate;
             placementRule.position = position;
             placementRule.minDistance = 2;
-            placementRule.maxDistance = 20;
+            placementRule.maxDistance = 30;
             DirectorSpawnRequest directorSpawnRequest = new DirectorSpawnRequest(spawnCard, placementRule, Run.instance.runRNG);
             GameObject interactable = instance.TrySpawnObject(directorSpawnRequest);
 
