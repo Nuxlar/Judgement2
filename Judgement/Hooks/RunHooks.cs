@@ -8,35 +8,36 @@ using UnityEngine.SceneManagement;
 using EntityStates.Missions.BrotherEncounter;
 using MonoMod.Cil;
 using RoR2.Artifacts;
+using RoR2.ContentManagement;
 
 namespace Judgement
 {
     public class RunHooks
     {
+        private BasicPickupDropTable dtEquip;
+        private BasicPickupDropTable dtWhite;
+        private BasicPickupDropTable dtGreen;
+        private BasicPickupDropTable dtRed;
+        private BasicPickupDropTable dtYellow;
 
-        private BasicPickupDropTable dtEquip = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtEquipment.asset").WaitForCompletion();
-        private BasicPickupDropTable dtWhite = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtTier1Item.asset").WaitForCompletion();
-        private BasicPickupDropTable dtGreen = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtTier2Item.asset").WaitForCompletion();
-        private BasicPickupDropTable dtRed = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/Common/dtTier3Item.asset").WaitForCompletion();
-        private BasicPickupDropTable dtYellow = Addressables.LoadAssetAsync<BasicPickupDropTable>("RoR2/Base/DuplicatorWild/dtDuplicatorWild.asset").WaitForCompletion();
+        private GameObject potentialPickup;
 
-        private GameObject potentialPickup = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/OptionPickup/OptionPickup.prefab").WaitForCompletion();
+        private SceneDef voidPlains;
+        private SceneDef voidAqueduct;
+        private SceneDef voidAphelian;
+        private SceneDef voidRPD;
+        private SceneDef voidAbyssal;
+        private SceneDef voidMeadow;
 
-        private SceneDef voidPlains = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itgolemplains/itgolemplains.asset").WaitForCompletion();
-        private SceneDef voidAqueduct = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itgoolake/itgoolake.asset").WaitForCompletion();
-        private SceneDef voidAphelian = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itancientloft/itancientloft.asset").WaitForCompletion();
-        private SceneDef voidRPD = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itfrozenwall/itfrozenwall.asset").WaitForCompletion();
-        private SceneDef voidAbyssal = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itdampcave/itdampcave.asset").WaitForCompletion();
-        private SceneDef voidMeadow = Addressables.LoadAssetAsync<SceneDef>("RoR2/DLC1/itskymeadow/itskymeadow.asset").WaitForCompletion();
+        private GameEndingDef judgementRunEnding;
 
-        private GameEndingDef judgementRunEnding = Addressables.LoadAssetAsync<GameEndingDef>("RoR2/Base/WeeklyRun/PrismaticTrialEnding.asset").WaitForCompletion();
-
-        private GameObject tpOutController = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/TeleportOutController.prefab").WaitForCompletion();
+        private GameObject tpOutController;
         // private GameObject voidSkybox = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/voidraid/Weather, Void Raid.prefab").WaitForCompletion();
 
         public RunHooks()
         {
             // voidSkybox.AddComponent<NetworkIdentity>();
+            LoadAssets();
 
             IL.RoR2.SceneDirector.PopulateScene += RemoveExtraLoot;
             // On.RoR2.SceneDirector.Start += AddVoidSkyToMoon;
@@ -358,6 +359,8 @@ namespace Judgement
                         }
                     }
                 }
+                if (!SceneExitController.isRunning)
+                    self.BeginStagePreload();
                 self.SetState(SceneExitController.ExitState.Finished);
             }
             else
@@ -434,5 +437,37 @@ namespace Judgement
             }
         }
 */
+        private void LoadAssets()
+        {
+            AssetReferenceT<BasicPickupDropTable> dtEquipRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtEquipment_asset);
+            AssetReferenceT<BasicPickupDropTable> dtWhiteRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtTier1Item_asset);
+            AssetReferenceT<BasicPickupDropTable> dtGreenRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtTier2Item_asset);
+            AssetReferenceT<BasicPickupDropTable> dtRedRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtTier3Item_asset);
+            AssetReferenceT<BasicPickupDropTable> dtYellowRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_DuplicatorWild.dtDuplicatorWild_asset);
+            AssetReferenceT<GameObject> potentialPickupRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_OptionPickup.OptionPickup_prefab);
+            AssetReferenceT<GameObject> tpOutRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.TeleportOutController_prefab);
+            AssetReferenceT<SceneDef> voidPlainsRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itgolemplains.itgolemplains_asset);
+            AssetReferenceT<SceneDef> voidAqueductRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itgoolake.itgoolake_asset);
+            AssetReferenceT<SceneDef> voidAphelianRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itancientloft.itancientloft_asset);
+            AssetReferenceT<SceneDef> voidRPDRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itfrozenwall.itfrozenwall_asset);
+            AssetReferenceT<SceneDef> voidAbyssalRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itdampcave.itdampcave_asset);
+            AssetReferenceT<SceneDef> voidMeadowRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itskymeadow.itskymeadow_asset);
+            AssetReferenceT<GameEndingDef> endingRef = new AssetReferenceT<GameEndingDef>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_WeeklyRun.PrismaticTrialEnding_asset);
+
+            AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtEquipRef).Completed += (x) => dtEquip = x.Result;
+            AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtWhiteRef).Completed += (x) => dtWhite = x.Result;
+            AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtGreenRef).Completed += (x) => dtGreen = x.Result;
+            AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtRedRef).Completed += (x) => dtRed = x.Result;
+            AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtYellowRef).Completed += (x) => dtYellow = x.Result;
+            AssetAsyncReferenceManager<GameObject>.LoadAsset(potentialPickupRef).Completed += (x) => potentialPickup = x.Result;
+            AssetAsyncReferenceManager<GameObject>.LoadAsset(tpOutRef).Completed += (x) => tpOutController = x.Result;
+            AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidPlainsRef).Completed += (x) => voidPlains = x.Result;
+            AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidAqueductRef).Completed += (x) => voidAqueduct = x.Result;
+            AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidAphelianRef).Completed += (x) => voidAphelian = x.Result;
+            AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidRPDRef).Completed += (x) => voidRPD = x.Result;
+            AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidAbyssalRef).Completed += (x) => voidAbyssal = x.Result;
+            AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidMeadowRef).Completed += (x) => voidMeadow = x.Result;
+            AssetAsyncReferenceManager<GameEndingDef>.LoadAsset(endingRef).Completed += (x) => judgementRunEnding = x.Result;
+        }
     }
 }

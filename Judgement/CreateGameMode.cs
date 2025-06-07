@@ -10,6 +10,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 using MonoMod.Cil;
 using Mono.Cecil.Cil;
+using RoR2.ContentManagement;
 
 namespace Judgement
 {
@@ -17,7 +18,7 @@ namespace Judgement
     {
         public static GameObject judgementRunPrefab;
         public static GameObject extraGameModeMenu;
-        private GameObject simClone = Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/GameModes/InfiniteTowerRun/InfiniteTowerRun.prefab").WaitForCompletion();
+        private GameObject simClone = AssetAsyncReferenceManager<GameObject>.LoadAsset(new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_GameModes_InfiniteTowerRun.InfiniteTowerRun_prefab)).WaitForCompletion();
 
         public CreateGameMode()
         {

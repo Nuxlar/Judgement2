@@ -1,3 +1,9 @@
+**1.5.6**
+
+- Updated for Memory Optimization update
+- Fixed not being able to teleport to next stage (due to memop update)
+- Increased non-boss wave credits 130 -> 150 (they don't feel as impactful)
+
 **1.5.5**
 
 - Fixes scaling being too harsh (way too many enemies were spawning)

@@ -1,5 +1,6 @@
 using System;
 using RoR2;
+using RoR2.ContentManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
@@ -9,14 +10,16 @@ namespace Judgement
 {
     public class SimulacrumHooks
     {
-        private SpawnCard lockBox = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Junk/TreasureCache/iscLockbox.asset").WaitForCompletion();
-        private SpawnCard lockBoxVoid = Addressables.LoadAssetAsync<SpawnCard>("RoR2/DLC1/TreasureCacheVoid/iscLockboxVoid.asset").WaitForCompletion();
-        private SpawnCard freeChest = Addressables.LoadAssetAsync<SpawnCard>("RoR2/DLC1/FreeChest/iscFreeChest.asset").WaitForCompletion();
-        private SpawnCard greenPrinter = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/DuplicatorLarge/iscDuplicatorLarge.asset").WaitForCompletion();
-        private SpawnCard voidChest = Addressables.LoadAssetAsync<SpawnCard>("RoR2/DLC1/VoidChest/iscVoidChest.asset").WaitForCompletion();
+        private SpawnCard lockBox;
+        private SpawnCard lockBoxVoid;
+        private SpawnCard freeChest;
+        private SpawnCard greenPrinter;
+        private SpawnCard voidChest;
 
         public SimulacrumHooks()
         {
+            LoadAssets();
+
             On.RoR2.InfiniteTowerRun.SpawnSafeWard += SetupInteractables;
             On.RoR2.InfiniteTowerRun.MoveSafeWard += PreventCrabMovement;
             On.RoR2.InfiniteTowerRun.RecalculateDifficultyCoefficentInternal += IncreaseScaling;
@@ -32,7 +35,7 @@ namespace Judgement
                 if (self is InfiniteTowerBossWaveController)
                     self.baseCredits = 400;
                 else
-                    self.baseCredits = 130;
+                    self.baseCredits = 150;
                 // 159 500
             }
             orig(self);
@@ -197,6 +200,21 @@ namespace Judgement
             }
             else
                 Log.Error($"Judgement: Failed to set {chest.name} cost to free.");
+        }
+
+        private void LoadAssets()
+        {
+            AssetReferenceT<SpawnCard> lockBoxRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_Junk_TreasureCache.iscLockbox_asset);
+            AssetReferenceT<SpawnCard> voidLockBoxRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_TreasureCacheVoid.iscLockboxVoid_asset);
+            AssetReferenceT<SpawnCard> freeChestRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_FreeChest.iscFreeChest_asset);
+            AssetReferenceT<SpawnCard> greenPrinterRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_DuplicatorLarge.iscDuplicatorLarge_asset);
+            AssetReferenceT<SpawnCard> voidChestRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_VoidChest.iscVoidChest_asset);
+
+            AssetAsyncReferenceManager<SpawnCard>.LoadAsset(lockBoxRef).Completed += (x) => lockBox = x.Result;
+            AssetAsyncReferenceManager<SpawnCard>.LoadAsset(voidLockBoxRef).Completed += (x) => lockBoxVoid = x.Result;
+            AssetAsyncReferenceManager<SpawnCard>.LoadAsset(freeChestRef).Completed += (x) => freeChest = x.Result;
+            AssetAsyncReferenceManager<SpawnCard>.LoadAsset(greenPrinterRef).Completed += (x) => greenPrinter = x.Result;
+            AssetAsyncReferenceManager<SpawnCard>.LoadAsset(voidChestRef).Completed += (x) => voidChest = x.Result;
         }
     }
 }
