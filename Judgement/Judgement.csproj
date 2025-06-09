@@ -33,9 +33,9 @@
     <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" GeneratePathProperty="true" />
     <PackageReference Include="R2API.Core" Version="5.1.5" />
     <PackageReference Include="R2API.Prefab" Version="1.0.4" />
-	  <PackageReference Include="R2API.ContentManagement" Version="1.0.9" />
+	  <PackageReference Include="R2API.ContentManagement" Version="1.0.10" />
   </ItemGroup>
-	
+
    <Target Name="BuildTSPackage" AfterTargets="Build">
     <MakeDir Directories="$(TSPackageDir);$(TSPackagePluginDir)" />
     <Copy SourceFiles="$(SolutionDir)manifest.json;$(SolutionDir)README.md;$(SolutionDir)CHANGELOG.md" DestinationFolder="$(TSPackageDir)" />

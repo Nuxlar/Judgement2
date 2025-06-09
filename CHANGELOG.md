@@ -1,3 +1,7 @@
+**1.5.7**
+
+- Internal changes for R2API ContentManagement update
+
 **1.5.6**
 
 - Updated for Memory Optimization update

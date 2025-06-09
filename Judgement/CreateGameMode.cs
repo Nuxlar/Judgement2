@@ -1,15 +1,10 @@
 using R2API;
 using RoR2;
 using RoR2.ExpansionManagement;
-using RoR2.UI;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
-using MonoMod.Cil;
-using Mono.Cecil.Cil;
 using RoR2.ContentManagement;
 
 namespace Judgement
@@ -27,12 +22,9 @@ namespace Judgement
 
         private void CreateJudgementRun()
         {
-            judgementRunPrefab = PrefabAPI.InstantiateClone(new GameObject("xJudgementRun"), "xJudgementRun");
+            judgementRunPrefab = PrefabAPI.InstantiateClone(new GameObject("JudgementRun"), "JudgementRun");
             judgementRunPrefab.AddComponent<NetworkIdentity>();
             PrefabAPI.RegisterNetworkPrefab(judgementRunPrefab);
-
-            GameModeInfo gameModeInfo = judgementRunPrefab.AddComponent<GameModeInfo>();
-            gameModeInfo.buttonHoverDescription = "Defeat all that stand before you to reach the final throne.";
 
             InfiniteTowerRun component2 = simClone.GetComponent<InfiniteTowerRun>();
 
@@ -106,7 +98,7 @@ namespace Judgement
             judgementRunPrefab.AddComponent<ExpansionRequirementComponent>();
             judgementRunPrefab.AddComponent<RunCameraManager>();
 
-            ContentAddition.AddGameMode(judgementRunPrefab);
+            ContentAddition.AddGameMode(judgementRunPrefab, "Defeat all that stand before you to reach the final throne.");
         }
     }
 }
