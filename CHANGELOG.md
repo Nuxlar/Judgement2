@@ -1,3 +1,16 @@
+**1.6.0**
+
+- Rebalancing (some AoE items made the waves too easy and early boss waves were too overwhelming for weaker chars)
+- Adds a single-use full heal shrine each wave (single-use regardless of player count)
+- Blacklists some AoE items (Ceremonial Dagger, Unstable Tesla Coil, Gasoline, Voidsent Flame)
+- Blacklists revive items (Dio's, Void Dio's, Seed of Life)
+- Blacklists useless items (Chance Doll, Sale Star)
+- Blacklists useless equips (Radar Scanner)
+- Increased base credits for enemy waves (150 -> 200)
+- Reduced base credits for boss waves (400 -> 350)
+- Removed persistent curse from void cradles (they still apply curse just for that wave)
+- Internal code changes for dependency updates
+
 **1.5.7**
 
 - Internal changes for R2API ContentManagement update

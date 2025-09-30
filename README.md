@@ -9,6 +9,7 @@ This mod adds a new game mode based on Judgement from Risk of Rain Returns, usin
 The following list should answer any questions you may have about the mod:
 
 - This mod is compatible with Mithrix mods such as Umbral, Inferno, and AotK.
+- Certain items/equips are blacklisted, see full list below
 - Your health and gold persist between stages. 
 - Uses Monsoon scaling, so modded difficulty scaling won't apply but other effects of the difficulty will. (higher scaling makes runs practically impossible)
 - There are 5 rounds, 2 waves each (10 total waves).
@@ -17,6 +18,11 @@ The following list should answer any questions you may have about the mod:
 - Regen scrap spawns a green printer in the zone next stage.
 - Rusted/Encrusted Keys spawn their boxes next stage.
 - Shipping Request Form drops spawn next stage.
+
+### Blacklist
+
+- Blacklisted Items: Dio's Best Friend, Pluripotent Larva, Ceremonial Dagger, Unstable Tesla Coil, Gasoline, Voidsent Flame, Chance Doll, Sale Star
+- Blacklisted Equipments: Seed of Life, Radar Scanner
 
 ### Item Drops
 

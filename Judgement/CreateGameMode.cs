@@ -13,7 +13,7 @@ namespace Judgement
     {
         public static GameObject judgementRunPrefab;
         public static GameObject extraGameModeMenu;
-        private GameObject simClone = AssetAsyncReferenceManager<GameObject>.LoadAsset(new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_GameModes_InfiniteTowerRun.InfiniteTowerRun_prefab)).WaitForCompletion();
+        private GameObject simClone = AssetAsyncReferenceManager<GameObject>.LoadAsset(new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_GameModes_InfiniteTowerRun.InfiniteTowerRun_prefab)).WaitForCompletion();
 
         public CreateGameMode()
         {

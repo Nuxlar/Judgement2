@@ -8,9 +8,8 @@ namespace Judgement
     public class JudgementRun : InfiniteTowerRun
     {
         public Vector3 safeWardPos = Vector3.zero;
+        public bool healShrineUsed = false;
         [SyncVar]
         public Dictionary<NetworkInstanceId, float> persistentHP = new Dictionary<NetworkInstanceId, float>();
-        [SyncVar]
-        public Dictionary<NetworkInstanceId, int> persistentCurse = new Dictionary<NetworkInstanceId, int>();
     }
 }

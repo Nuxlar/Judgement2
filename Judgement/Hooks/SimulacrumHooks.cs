@@ -15,11 +15,13 @@ namespace Judgement
         private SpawnCard freeChest;
         private SpawnCard greenPrinter;
         private SpawnCard voidChest;
+        private GameObject healShrine;
 
         public SimulacrumHooks()
         {
             LoadAssets();
 
+            On.RoR2.InfiniteTowerRun.OverrideRuleChoices += BlacklistItems;
             On.RoR2.InfiniteTowerRun.SpawnSafeWard += SetupInteractables;
             On.RoR2.InfiniteTowerRun.MoveSafeWard += PreventCrabMovement;
             On.RoR2.InfiniteTowerRun.RecalculateDifficultyCoefficentInternal += IncreaseScaling;
@@ -28,14 +30,56 @@ namespace Judgement
             On.RoR2.InfiniteTowerBossWaveController.PreStartClient += GuaranteeBoss;
         }
 
+        private void BlacklistItems(
+                  On.RoR2.InfiniteTowerRun.orig_OverrideRuleChoices orig,
+                  InfiniteTowerRun self,
+                  RuleChoiceMask mustInclude,
+                  RuleChoiceMask mustExclude,
+                  ulong runSeed)
+        {
+            if ((bool)PreGameController.instance && PreGameController.instance.gameModeIndex == GameModeCatalog.FindGameModeIndex("JudgementRun"))
+            {
+                string[] itemBlacklist = new string[] {
+                    "ExtraLife",
+                    "ExtraLifeVoid",
+                    "Dagger",
+                    "ShockNearby",
+                    "IgniteOnKill",
+                    "ExplodeOnDeathVoid",
+                    "ExtraShrineItem",
+                    "LowerPricedChests"
+                };
+
+                string[] equipmentBlacklist = new string[] {
+                    "HealAndRevive",
+                    "Scanner"
+                };
+
+                foreach (string item in itemBlacklist)
+                {
+                    RuleChoiceDef choice = RuleCatalog.FindRuleDef("Items." + item)?.FindChoice("Off");
+                    if (choice != null)
+                        self.ForceChoice(mustInclude, mustExclude, choice);
+                }
+
+                foreach (string equipment in equipmentBlacklist)
+                {
+                    RuleChoiceDef choice = RuleCatalog.FindRuleDef("Equipment." + equipment)?.FindChoice("Off");
+                    if (choice != null)
+                        self.ForceChoice(mustInclude, mustExclude, choice);
+                }
+            }
+            else orig(self, mustInclude, mustExclude, runSeed);
+        }
+
         private void ManageWaveCredits(On.RoR2.InfiniteTowerWaveController.orig_OnEnable orig, InfiniteTowerWaveController self)
         {
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 if (self is InfiniteTowerBossWaveController)
-                    self.baseCredits = 400;
+                    self.baseCredits = 350;
                 else
-                    self.baseCredits = 150;
+                    self.baseCredits = 200;
                 // 159 500
             }
             orig(self);
@@ -88,6 +132,8 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
+                judgementRun.healShrineUsed = false;
+
                 string sceneName = SceneManager.GetActiveScene().name;
 
                 if (sceneName == "moon2")
@@ -120,6 +166,15 @@ namespace Judgement
                     {
                         // gameObject.AddComponent<CheckWavePickups>();
                         Vector3 position = self.safeWardController.transform.position;
+
+                        GameObject shrine = GameObject.Instantiate(healShrine, new Vector3(2f, 0f, 0f) + position, Quaternion.identity);
+                        shrine.name = "JudgementHealShrine";
+                        shrine.GetComponent<PurchaseInteraction>().costType = CostTypeIndex.None;
+                        shrine.GetComponent<PurchaseInteraction>().Networkcost = 0;
+                        shrine.GetComponent<PurchaseInteraction>().Networkavailable = true;
+                        shrine.GetComponent<PurchaseInteraction>().contextToken = $"Single-Use Full Heal Shrine";
+                        shrine.GetComponent<PurchaseInteraction>().displayNameToken = $"Single-Use Full Heal Shrine";
+                        NetworkServer.Spawn(shrine);
 
                         if (judgementRun.waveIndex == 4 || judgementRun.waveIndex == 8)
                         {
@@ -204,17 +259,19 @@ namespace Judgement
 
         private void LoadAssets()
         {
-            AssetReferenceT<SpawnCard> lockBoxRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_Junk_TreasureCache.iscLockbox_asset);
-            AssetReferenceT<SpawnCard> voidLockBoxRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_TreasureCacheVoid.iscLockboxVoid_asset);
-            AssetReferenceT<SpawnCard> freeChestRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_FreeChest.iscFreeChest_asset);
-            AssetReferenceT<SpawnCard> greenPrinterRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_DuplicatorLarge.iscDuplicatorLarge_asset);
-            AssetReferenceT<SpawnCard> voidChestRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_VoidChest.iscVoidChest_asset);
+            AssetReferenceT<SpawnCard> lockBoxRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Junk_TreasureCache.iscLockbox_asset);
+            AssetReferenceT<SpawnCard> voidLockBoxRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_TreasureCacheVoid.iscLockboxVoid_asset);
+            AssetReferenceT<SpawnCard> freeChestRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_FreeChest.iscFreeChest_asset);
+            AssetReferenceT<SpawnCard> greenPrinterRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_DuplicatorLarge.iscDuplicatorLarge_asset);
+            AssetReferenceT<SpawnCard> voidChestRef = new AssetReferenceT<SpawnCard>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_VoidChest.iscVoidChest_asset);
+            AssetReferenceT<GameObject> healShrineRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_ShrineHealing.ShrineHealing_prefab);
 
             AssetAsyncReferenceManager<SpawnCard>.LoadAsset(lockBoxRef).Completed += (x) => lockBox = x.Result;
             AssetAsyncReferenceManager<SpawnCard>.LoadAsset(voidLockBoxRef).Completed += (x) => lockBoxVoid = x.Result;
             AssetAsyncReferenceManager<SpawnCard>.LoadAsset(freeChestRef).Completed += (x) => freeChest = x.Result;
             AssetAsyncReferenceManager<SpawnCard>.LoadAsset(greenPrinterRef).Completed += (x) => greenPrinter = x.Result;
             AssetAsyncReferenceManager<SpawnCard>.LoadAsset(voidChestRef).Completed += (x) => voidChest = x.Result;
+            AssetAsyncReferenceManager<GameObject>.LoadAsset(healShrineRef).Completed += (x) => healShrine = x.Result;
         }
     }
 }

@@ -21,6 +21,7 @@ namespace Judgement
         private BasicPickupDropTable dtYellow;
 
         private GameObject potentialPickup;
+        private GameObject shrineUseEffect;
 
         private SceneDef voidPlains;
         private SceneDef voidAqueduct;
@@ -96,14 +97,27 @@ namespace Judgement
             JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
             if (judgementRun)
             {
+                if (self.name == "JudgementHealShrine")
+                {
+                    if (judgementRun.healShrineUsed)
+                        return;
+                    string chatMessage = "0 heals left.";
+                    Chat.SendBroadcastChat(new Chat.SimpleChatMessage() { baseToken = "You have " + chatMessage });
+                    HealthComponent healthComponent = activator.GetComponent<CharacterBody>().healthComponent;
+                    healthComponent.health = healthComponent.fullHealth;
+                    EffectManager.SpawnEffect(shrineUseEffect, new EffectData()
+                    {
+                        origin = self.transform.position,
+                        rotation = Quaternion.identity,
+                        scale = 1f,
+                        color = Color.green
+                    }, true);
+                    judgementRun.healShrineUsed = true;
+                    return;
+                }
                 if (self.name == "VoidChest(Clone)")
                 {
                     CharacterBody body = activator.GetComponent<CharacterBody>();
-                    if (judgementRun.persistentCurse.TryGetValue(body.master.netId, out int _))
-                        judgementRun.persistentCurse[body.master.netId] += 20;
-                    else
-                        judgementRun.persistentCurse.Add(body.master.netId, 20);
-
                     if (Run.instance.selectedDifficulty < DifficultyIndex.Eclipse8)
                     {
                         for (int i = 0; i < 20; i++)
@@ -163,16 +177,6 @@ namespace Judgement
             JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
             if (body.master && body.healthComponent && judgementRun.persistentHP.TryGetValue(body.master.netId, out float hp))
                 body.healthComponent.health = hp;
-        }
-
-        public void LoadPersistentCurse(CharacterBody body)
-        {
-            JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-            if (body.master && judgementRun.persistentCurse.TryGetValue(body.master.netId, out int curseStacks))
-            {
-                for (int i = 0; i < curseStacks; i++)
-                    body.AddBuff(RoR2Content.Buffs.PermanentCurse);
-            }
         }
 
         private void RemoveExtraLoot(ILContext il)
@@ -377,7 +381,6 @@ namespace Judgement
                 if (NetworkServer.active)
                 {
                     LoadPersistentHP(self);
-                    LoadPersistentCurse(self);
                 }
 
                 if (Run.instance.selectedDifficulty >= DifficultyIndex.Eclipse1 && judgementRun.waveIndex == 0)
@@ -386,6 +389,7 @@ namespace Judgement
                 // self.baseDamage *= 1.25f;
                 // self.baseRegen = 0f;
                 //self.levelRegen = 0f;
+                /*
                 string sceneName = SceneManager.GetActiveScene().name;
 
                 if (sceneName == "moon2" && self.isPlayerControlled)
@@ -400,6 +404,7 @@ namespace Judgement
                         }
                     }
                 }
+                */
             }
         }
 
@@ -439,20 +444,21 @@ namespace Judgement
 */
         private void LoadAssets()
         {
-            AssetReferenceT<BasicPickupDropTable> dtEquipRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtEquipment_asset);
-            AssetReferenceT<BasicPickupDropTable> dtWhiteRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtTier1Item_asset);
-            AssetReferenceT<BasicPickupDropTable> dtGreenRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtTier2Item_asset);
-            AssetReferenceT<BasicPickupDropTable> dtRedRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.dtTier3Item_asset);
-            AssetReferenceT<BasicPickupDropTable> dtYellowRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_DuplicatorWild.dtDuplicatorWild_asset);
-            AssetReferenceT<GameObject> potentialPickupRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_OptionPickup.OptionPickup_prefab);
-            AssetReferenceT<GameObject> tpOutRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_Common.TeleportOutController_prefab);
-            AssetReferenceT<SceneDef> voidPlainsRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itgolemplains.itgolemplains_asset);
-            AssetReferenceT<SceneDef> voidAqueductRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itgoolake.itgoolake_asset);
-            AssetReferenceT<SceneDef> voidAphelianRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itancientloft.itancientloft_asset);
-            AssetReferenceT<SceneDef> voidRPDRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itfrozenwall.itfrozenwall_asset);
-            AssetReferenceT<SceneDef> voidAbyssalRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itdampcave.itdampcave_asset);
-            AssetReferenceT<SceneDef> voidMeadowRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPaths.RoR2_DLC1_itskymeadow.itskymeadow_asset);
-            AssetReferenceT<GameEndingDef> endingRef = new AssetReferenceT<GameEndingDef>(RoR2BepInExPack.GameAssetPaths.RoR2_Base_WeeklyRun.PrismaticTrialEnding_asset);
+            AssetReferenceT<BasicPickupDropTable> dtEquipRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_Common.dtEquipment_asset);
+            AssetReferenceT<BasicPickupDropTable> dtWhiteRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_Common.dtTier1Item_asset);
+            AssetReferenceT<BasicPickupDropTable> dtGreenRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_Common.dtTier2Item_asset);
+            AssetReferenceT<BasicPickupDropTable> dtRedRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_Common.dtTier3Item_asset);
+            AssetReferenceT<BasicPickupDropTable> dtYellowRef = new AssetReferenceT<BasicPickupDropTable>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_DuplicatorWild.dtDuplicatorWild_asset);
+            AssetReferenceT<GameObject> potentialPickupRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_OptionPickup.OptionPickup_prefab);
+            AssetReferenceT<GameObject> tpOutRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_Common.TeleportOutController_prefab);
+            AssetReferenceT<GameObject> shrineEffectRef = new AssetReferenceT<GameObject>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_Common_VFX.ShrineUseEffect_prefab);
+            AssetReferenceT<SceneDef> voidPlainsRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_itgolemplains.itgolemplains_asset);
+            AssetReferenceT<SceneDef> voidAqueductRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_itgoolake.itgoolake_asset);
+            AssetReferenceT<SceneDef> voidAphelianRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_itancientloft.itancientloft_asset);
+            AssetReferenceT<SceneDef> voidRPDRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_itfrozenwall.itfrozenwall_asset);
+            AssetReferenceT<SceneDef> voidAbyssalRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_itdampcave.itdampcave_asset);
+            AssetReferenceT<SceneDef> voidMeadowRef = new AssetReferenceT<SceneDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_DLC1_itskymeadow.itskymeadow_asset);
+            AssetReferenceT<GameEndingDef> endingRef = new AssetReferenceT<GameEndingDef>(RoR2BepInExPack.GameAssetPathsBetter.RoR2_Base_WeeklyRun.PrismaticTrialEnding_asset);
 
             AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtEquipRef).Completed += (x) => dtEquip = x.Result;
             AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtWhiteRef).Completed += (x) => dtWhite = x.Result;
@@ -461,6 +467,7 @@ namespace Judgement
             AssetAsyncReferenceManager<BasicPickupDropTable>.LoadAsset(dtYellowRef).Completed += (x) => dtYellow = x.Result;
             AssetAsyncReferenceManager<GameObject>.LoadAsset(potentialPickupRef).Completed += (x) => potentialPickup = x.Result;
             AssetAsyncReferenceManager<GameObject>.LoadAsset(tpOutRef).Completed += (x) => tpOutController = x.Result;
+            AssetAsyncReferenceManager<GameObject>.LoadAsset(shrineEffectRef).Completed += (x) => shrineUseEffect = x.Result;
             AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidPlainsRef).Completed += (x) => voidPlains = x.Result;
             AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidAqueductRef).Completed += (x) => voidAqueduct = x.Result;
             AssetAsyncReferenceManager<SceneDef>.LoadAsset(voidAphelianRef).Completed += (x) => voidAphelian = x.Result;
