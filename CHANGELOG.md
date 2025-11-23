@@ -1,3 +1,12 @@
+**1.6.1**
+
+- Updated for Alloyed Collective
+- Fixed heal shrine from being interacted with even after depleting heals
+- Fixed stage not changing after hitting the portal
+- Slightly Increased non-boss wave credits `200 -> 225`
+- Increased per-wave difficulty scaling (increases more based on wave number)
+- Removed void cradle giving permanent curse if not on E8
+
 **1.6.0**
 
 - Rebalancing (some AoE items made the waves too easy and early boss waves were too overwhelming for weaker chars)

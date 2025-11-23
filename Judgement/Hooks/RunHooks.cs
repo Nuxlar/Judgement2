@@ -76,7 +76,6 @@ namespace Judgement
                         if ((bool)component1)
                         {
                             component1.createPickupInfo = pickupInfo;
-                            component1.NetworkpickupIndex = pickupInfo.pickupIndex;
                         }
                         Rigidbody component2 = gameObject.GetComponent<Rigidbody>();
                         component2.velocity = velocity;
@@ -113,22 +112,12 @@ namespace Judgement
                         color = Color.green
                     }, true);
                     judgementRun.healShrineUsed = true;
+                    self.available = false;
                     return;
-                }
-                if (self.name == "VoidChest(Clone)")
-                {
-                    CharacterBody body = activator.GetComponent<CharacterBody>();
-                    if (Run.instance.selectedDifficulty < DifficultyIndex.Eclipse8)
-                    {
-                        for (int i = 0; i < 20; i++)
-                            body.AddBuff(RoR2Content.Buffs.PermanentCurse);
-                    }
-
-                    orig(self, activator);
                 }
                 else if (self.name == "DuplicatorLarge(Clone)")
                 {
-                    int count = activator.GetComponent<CharacterBody>().inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap);
+                    int count = activator.GetComponent<CharacterBody>().inventory.GetItemCountPermanent(DLC1Content.Items.RegeneratingScrap);
                     if (count == 0)
                         return;
                     orig(self, activator);
@@ -321,12 +310,12 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 JudgementRun judgementRun = Run.instance.gameObject.GetComponent<JudgementRun>();
-
+                UnityEngine.Debug.LogWarning($"Managing Stage Selection for wave {judgementRun.waveIndex}");
                 if (NetworkServer.active)
                     SavePersistentHP();
 
                 if (judgementRun.waveIndex == 0)
-                    Run.instance.nextStageScene = voidPlains;
+                    self.destinationScene = voidPlains;
                 if (judgementRun.waveIndex == 2)
                 {
                     int[] array = Array.Empty<int>();
@@ -335,19 +324,20 @@ namespace Judgement
                     weightedSelection.AddChoice(voidAphelian, 1f);
                     int toChoiceIndex = weightedSelection.EvaluateToChoiceIndex(Run.instance.runRNG.nextNormalizedFloat, array);
                     WeightedSelection<SceneDef>.ChoiceInfo choice = weightedSelection.GetChoice(toChoiceIndex);
-                    Run.instance.nextStageScene = choice.value;
+                    self.destinationScene = choice.value;
                 }
                 if (judgementRun.waveIndex == 4)
-                    Run.instance.nextStageScene = voidRPD;
+                    self.destinationScene = voidRPD;
                 if (judgementRun.waveIndex == 6)
-                    Run.instance.nextStageScene = voidAbyssal;
+                    self.destinationScene = voidAbyssal;
                 if (judgementRun.waveIndex == 8)
-                    Run.instance.nextStageScene = voidMeadow;
+                    self.destinationScene = voidMeadow;
                 if (judgementRun.waveIndex == 10)
                 {
                     SceneDef sceneDef = SceneCatalog.FindSceneDef("moon2");
-                    Run.instance.nextStageScene = sceneDef;
+                    self.destinationScene = sceneDef;
                 }
+                UnityEngine.Debug.LogWarning($"Next Stage set to {self.destinationScene.nameToken}");
                 ReadOnlyCollection<CharacterMaster> onlyInstancesList = CharacterMaster.readOnlyInstancesList;
                 for (int index = 0; index < onlyInstancesList.Count; ++index)
                 {

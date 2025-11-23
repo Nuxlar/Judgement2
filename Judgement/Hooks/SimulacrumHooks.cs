@@ -79,7 +79,7 @@ namespace Judgement
                 if (self is InfiniteTowerBossWaveController)
                     self.baseCredits = 350;
                 else
-                    self.baseCredits = 200;
+                    self.baseCredits = 225;
                 // 159 500
             }
             orig(self);
@@ -111,7 +111,7 @@ namespace Judgement
             if (Run.instance && Run.instance.name.Contains("Judgement"))
             {
                 DifficultyDef difficultyDef = DifficultyCatalog.GetDifficultyDef(DifficultyIndex.Hard);
-                float num1 = 1.5f * (self.waveIndex * 0.8f); // make scaling less harsh as the waves increase
+                float num1 = 1.5f * self.waveIndex;
                 float num2 = 0.0506f * (difficultyDef.scalingValue * 2f); // increase scaling since the run is shorter
                 float num3 = Mathf.Pow(1.02f, self.waveIndex);
                 self.difficultyCoefficient = (float)(1.0 + (double)num2 * (double)num1) * num3;
@@ -186,7 +186,7 @@ namespace Judgement
 
                         foreach (CharacterMaster readOnlyInstances in CharacterMaster.readOnlyInstancesList)
                         {
-                            if (readOnlyInstances.inventory.GetItemCount(DLC1Content.Items.RegeneratingScrap) > 0)
+                            if (readOnlyInstances.inventory.GetItemCountPermanent(DLC1Content.Items.RegeneratingScrap) > 0)
                             {
                                 SpawnInteractable(greenPrinter, position, false);
                                 break;
@@ -196,7 +196,7 @@ namespace Judgement
                         for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
                         {
                             CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
-                            if (master.inventory.GetItemCount(RoR2Content.Items.TreasureCache) > 0)
+                            if (master.inventory.GetItemCountPermanent(RoR2Content.Items.TreasureCache) > 0)
                             {
                                 SpawnInteractable(lockBox, position, false);
                             }
@@ -205,7 +205,7 @@ namespace Judgement
                         for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
                         {
                             CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
-                            if (master.inventory.GetItemCount(DLC1Content.Items.TreasureCacheVoid) > 0)
+                            if (master.inventory.GetItemCountPermanent(DLC1Content.Items.TreasureCacheVoid) > 0)
                             {
                                 SpawnInteractable(lockBoxVoid, position, false);
                             }
@@ -214,7 +214,7 @@ namespace Judgement
                         for (int i = 0; i < CharacterMaster.readOnlyInstancesList.Count; i++)
                         {
                             CharacterMaster master = CharacterMaster.readOnlyInstancesList[i];
-                            if (master.inventory.GetItemCount(DLC1Content.Items.FreeChest) > 0)
+                            if (master.inventory.GetItemCountPermanent(DLC1Content.Items.FreeChest) > 0)
                             {
                                 SpawnInteractable(freeChest, position, false);
                             }
